@@ -1,0 +1,257 @@
+syntax = "v1"
+
+service gopan-api {
+	// 用户登录
+	@handler UserLogin
+	post /user/login (LoginRequest) returns (LoginResponse)
+
+	// 获取用户详情
+	@handler UserDetail
+	get /user/detail (UserDetailRequest) returns (UserDetailResponse)
+
+	// 验证码发送
+	@handler CodeSend
+	post /code/send (CodeSendRequest) returns (CodeSendResponse)
+
+	// 用户注册
+	@handler Register
+	post /register (RegisterRequest) returns (RegisterResponse)
+
+	// 获取资源信息
+	@handler ResourceInfo
+	get /resource/info (ResourceInfoRequest) returns (ResourceInfoResponse)
+}
+
+@server (
+	middleware: Auth
+)
+service gopan-api {
+	// 文件上传COS
+	@handler FileUpload
+	post /file/upload (FileUploadRequest) returns (FileUploadResponse)
+
+	// 用户仓库列表
+	@handler UserRepository
+	post /user/repository (UserRepositoryRequest) returns (UserRepositoryResponse)
+
+	// 文件列表
+	@handler FileList
+	get /file/list (FileListRequest) returns (FileListResponse)
+
+	// 文件名称修改
+	@handler FileRename
+	post /file/rename (FileRenameRequest) returns (FileRenameResponse)
+
+	// 文件夹创建
+	@handler FolderCreate
+	post /folder/create (FolderCreateRequest) returns (FolderCreateResponse)
+
+	// 文件删除
+	@handler FileDelete
+	delete /file/delete (FileDeleteRequest) returns (FileDeleteResponse)
+
+	// 文件移动
+	@handler FileMove
+	put /file/move (FileMoveRequest) returns (FileMoveResponse)
+
+	// 文件分享链接创建
+	@handler ShareCreate
+	post /share/create (ShareCreateRequest) returns (ShareCreateResponse)
+
+	// 资源保存
+	@handler ResourceSave
+	post /resource/save (ResourceSaveRequest) returns (ResourceSaveResponse)
+
+	// 刷新Authorization
+	@handler TokenRefresh
+	post /token/refresh (LoginRequest) returns (LoginResponse)
+
+	// 文件上传预处理
+	@handler FilePreUpload
+	post /file/preupload (FilePreUploadRequest) returns (FilePreUploadResponse)
+
+	// 文件分片上传
+	@handler FileChunkUpload
+	post /file/chunkupload (FileChunkUploadRequest) returns (FileChunkUploadResponse)
+
+	// 文件分片上传完成
+	@handler FileChunkUploadComplete
+	post /file/chunkupload/complete (FileChunkUploadCompleteRequest) returns (FileChunkUploadCompleteResponse)
+}
+
+type LoginRequest {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+}
+
+type LoginResponse {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type UserDetailRequest {
+	identity string `json:"identity"`
+}
+
+type UserDetailResponse {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type CodeSendRequest {
+	Email string `json:"email"`
+}
+
+type CodeSendResponse {}
+
+type RegisterRequest {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+}
+
+type RegisterResponse {}
+
+type FileUploadRequest {
+	Hash string `json:"hash,optional"`
+	Name string `json:"name,optional"`
+	Ext  string `json:"ext,optional"`
+	Size int64  `json:"size,optional"`
+	Path string `json:"path,optional"`
+}
+
+type FileUploadResponse {
+	Identity string `json:"identity"`
+	Ext      string `json:"ext"`
+	Name     string `json:"name"`
+}
+
+type UserRepositoryRequest {
+	ParentId           int64  `json:"parent_id"`
+	RepositoryIdentity string `json:"repository_identity"`
+	Ext                string `json:"ext"`
+	Name               string `json:"name"`
+}
+
+type UserRepositoryResponse {}
+
+type FileListRequest {
+	Id   int64 `json:"id,optional"`
+	Page int   `json:"page,optional"`
+	Size int   `json:"size,optional"`
+}
+
+type FileListResponse {
+	List  []*UserFile `json:"list"`
+	Count int64       `json:"count"`
+}
+
+type UserFile {
+	Id                 int64  `json:"id"`
+	Identity           string `json:"identity"`
+	RepositoryIdentity string `json:"repository_identity"`
+	Name               string `json:"name"`
+	Ext                string `json:"ext"`
+	Path               string `json:"path"`
+	Size               int64  `json:"size"`
+}
+
+type FileRenameRequest {
+	Identity string `json:"identity"`
+	Name     string `json:"name"`
+}
+
+type FileRenameResponse {}
+
+type FolderCreateRequest {
+	Name     string `json:"name"`
+	ParentId int64  `json:"parent_id"`
+}
+
+type FolderCreateResponse {
+	Identity string `json:"identity"`
+}
+
+type FileDeleteRequest {
+	Identity string `json:"identity"`
+}
+
+type FileDeleteResponse {}
+
+type FileMoveRequest {
+	Identity       string `json:"identity"`
+	ParentIdentity string `json:"parent_identity"`
+}
+
+type FileMoveResponse {}
+
+type ShareCreateRequest {
+	RepositoryIdentity string `json:"repository_identity"`
+	Expires            int    `json:"expires"`
+}
+
+type ShareCreateResponse {
+	Identity string `json:"identity"`
+}
+
+type ResourceInfoRequest {
+	Identity string `json:"identity"`
+}
+
+type ResourceInfoResponse {
+	RepositoryIdentity string `json:"repository_identity"`
+	Name               string `json:"name"`
+	Ext                string `json:"ext"`
+	Size               int64  `json:"size"`
+	Path               string `json:"path"`
+}
+
+type ResourceSaveRequest {
+	RepositoryIdentity string `json:"repository_identity"`
+	ParentId           int64  `json:"parent_id"`
+	ShareIdentity      string `json:"share_identity,optional"`
+}
+
+type ResourceSaveResponse {
+	Identity string `json:"identity"`
+}
+
+type TokenRefreshRequest {}
+
+type TokenRefreshResponse {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type FilePreUploadRequest {
+	Md5  string `json:"md5"`
+	Name string `json:"name"`
+	Ext  string `json:"ext"`
+}
+
+type FilePreUploadResponse {
+	Identity string `json:"identity"`
+	UploadId string `json:"upload_id"`
+	Key      string `json:"key"`
+}
+
+type FileChunkUploadRequest {}
+
+type FileChunkUploadResponse {
+	Etag string `json:"etag"` // md5
+}
+
+type FileChunkUploadCompleteRequest {
+	Key        string      `json:"key"`
+	UploadId   string      `json:"upload_id"`
+	CosObjects []CosObject `json:"cos_objects"`
+}
+
+type CosObject {
+	PartNumber int    `json:"part_number"`
+	Etag       string `json:"etag"`
+}
+
+type FileChunkUploadCompleteResponse {}
+

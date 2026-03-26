@@ -1,0 +1,240 @@
+# GoPan
+
+GoPan 是一个基于 Go + Vue 3 的网盘系统，支持用户注册登录、文件管理、分片上传、分享链接、管理员后台和审计日志。
+
+## 技术栈
+
+- 后端: Go, go-zero, xorm, MySQL, Redis
+- 前端: Vue 3, TypeScript, Vite, Pinia, Vue Router, Axios
+- 对象存储: Tencent COS
+
+## 项目结构
+
+```text
+GoPan/
+  databases.sql                # 数据库初始化脚本
+  README.md                    # 项目说明（本文件）
+  gopan/                       # 后端服务
+    gopan.go                   # 服务入口
+    gopan.api                  # API 定义
+    etc/gopan-api.yaml         # 默认配置
+    etc/gopan-api.local.yaml   # 本地配置（建议）
+    internal/                  # handler/logic/svc/types
+    helper/                    # 公共辅助能力
+    models/                    # 数据模型
+  web/                         # 前端工程
+    package.json
+    vite.config.ts
+    src/
+```
+
+## 环境要求
+
+- Go: 以 `go.mod` 为准（当前为 `go 1.25.7`）
+- Node.js: 建议 `>= 18`
+- npm: 建议 `>= 9`
+- MySQL: `8.x`
+- Redis: `6.x` 及以上
+
+## 快速开始
+
+### 1. 初始化数据库
+
+1. 创建数据库，例如 `gopan`
+2. 执行 `databases.sql`
+
+### 2. 配置后端
+
+后端读取两类配置。
+
+1. YAML 配置文件
+
+- 默认文件: `gopan/etc/gopan-api.yaml`
+- 推荐本地文件: `gopan/etc/gopan-api.local.yaml`
+- `.gitignore` 已忽略 `gopan/etc/*.local.yaml`
+
+2. 环境变量（敏感配置）
+
+| 变量名                     | 说明          | 默认值             |
+| -------------------------- | ------------- | ------------------ |
+| `GOPAN_JWT_KEY`            | JWT 密钥      | `change-me-in-env` |
+| `GOPAN_FROM_MAIL`          | 发件邮箱      | 空                 |
+| `GOPAN_MAIL_PASSWORD`      | 邮箱授权码    | 空                 |
+| `GOPAN_SMTP_HOST`          | SMTP 主机     | `smtp.163.com`     |
+| `GOPAN_SMTP_PORT`          | SMTP 端口     | `465`              |
+| `GOPAN_TENCENT_SECRET_ID`  | COS SecretId  | 空                 |
+| `GOPAN_TENCENT_SECRET_KEY` | COS SecretKey | 空                 |
+| `GOPAN_COS_BUCKET_URL`     | COS 桶地址    | 空                 |
+
+Windows PowerShell 示例:
+
+```powershell
+$env:GOPAN_JWT_KEY="replace-with-strong-random-string"
+$env:GOPAN_FROM_MAIL="your_mail@163.com"
+$env:GOPAN_MAIL_PASSWORD="your_mail_auth_code"
+$env:GOPAN_SMTP_HOST="smtp.163.com"
+$env:GOPAN_SMTP_PORT="465"
+$env:GOPAN_TENCENT_SECRET_ID="AKIDxxxx"
+$env:GOPAN_TENCENT_SECRET_KEY="xxxx"
+$env:GOPAN_COS_BUCKET_URL="https://xxx.cos.ap-guangzhou.myqcloud.com"
+```
+
+### 3. 启动后端
+
+```bash
+cd gopan
+go run gopan.go -f etc/gopan-api.local.yaml
+```
+
+默认监听: `0.0.0.0:8888`
+
+### 4. 启动前端
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+默认地址: `http://127.0.0.1:5173`
+
+代理规则见 `web/vite.config.ts`: `/api/* -> http://127.0.0.1:8888/*`
+
+## 构建与质量检查
+
+### 后端
+
+```bash
+go build ./...
+```
+
+### 前端
+
+```bash
+cd web
+npm run build
+```
+
+### 建议测试命令
+
+```bash
+go test ./...
+```
+
+说明:
+
+- 部分测试依赖外部服务（MySQL/Redis/COS/SMTP）和本地测试资源文件。
+- 缺少环境变量时，`mail_test`、`cos_test` 会自动跳过。
+
+## 功能模块
+
+### 用户端
+
+- 登录: `/login`
+- 注册: `/register`
+- 网盘主页: `/disk`
+- 分享页: `/share/:identity`
+
+### 管理端
+
+- 管理页: `/admin`
+- 能力: 数据总览、用户管理、文件管理、日志审计
+
+## API 分组
+
+接口定义: `gopan/gopan.api`
+
+运行时路由: `gopan/internal/handler/routes.go`
+
+- 公共接口
+  - `POST /user/login`
+  - `POST /register`
+  - `POST /code/send`
+  - `GET /resource/info`
+  - `GET /user/detail`
+- 用户接口（Auth）
+  - `POST /file/upload`
+  - `POST /file/preupload`
+  - `POST /file/chunkupload`
+  - `POST /file/chunkupload/complete`
+  - `GET /file/list`
+  - `DELETE /file/delete`
+  - `POST /file/rename`
+  - `PUT /file/move`
+  - `POST /folder/create`
+  - `POST /share/create`
+  - `POST /resource/save`
+  - `POST /token/refresh`
+  - `POST /user/repository`
+- 管理员接口（Auth + Admin）
+  - `GET /admin/overview`
+  - `GET /admin/users`
+  - `PUT /admin/user/status`
+  - `GET /admin/files`
+  - `DELETE /admin/file`
+  - `GET /admin/logs`
+
+## 数据库表
+
+建表脚本: `databases.sql`
+
+- `user_basic`: 用户账户信息
+- `repository_pool`: 文件公共池（按哈希去重）
+- `user_repository`: 用户文件树
+- `share_link`: 分享记录
+- `audit_log`: 操作审计日志
+
+## 开发规范
+
+### 后端分层
+
+- `handler`: 参数解析和响应输出
+- `logic`: 业务逻辑
+- `models`: 数据访问模型
+- `types`: 请求/响应结构
+
+### API 变更流程
+
+1. 先修改 `gopan/gopan.api`
+2. 再同步 `gopan/internal/types`、`gopan/internal/logic`
+3. 最后同步 `web/src/api`、`web/src/types` 与页面调用
+4. 更新 README 的接口或行为说明
+
+### 提交前检查
+
+```bash
+go fmt ./...
+go build ./...
+cd web
+npm run build
+```
+
+### Git 规范（建议）
+
+- 分支: `feature/*`, `fix/*`, `refactor/*`
+- 提交信息: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
+
+## 安全规范
+
+- 不要把真实密钥、邮箱授权码提交到仓库
+- 敏感信息统一走环境变量或本地私有配置
+- 建议按环境维护配置文件（dev/test/prod）
+
+## 常见问题
+
+### 后端启动失败
+
+- 检查 MySQL/Redis 是否可用
+- 检查 `gopan/etc/gopan-api.local.yaml` 中连接串
+- 先执行 `go build ./...` 验证编译是否通过
+
+### 前端请求 404/跨域
+
+- 确认后端已启动在 `127.0.0.1:8888`
+- 检查 `web/vite.config.ts` 代理配置
+- 前端请求路径应以 `/api` 开头
+
+### COS 或邮件功能异常
+
+- 检查 `GOPAN_*` 环境变量是否注入
+- 检查 COS 桶权限、SMTP 服务和授权码是否有效

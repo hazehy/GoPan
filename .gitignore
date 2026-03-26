@@ -1,0 +1,13 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local backend config
+gopan/etc/*.local.yaml
+
+# Local frontend config
+web/.env.local
+
+# Build artifacts
+web/dist/

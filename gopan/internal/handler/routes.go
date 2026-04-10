@@ -52,6 +52,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: FileChunkUploadHandler(serverCtx),
 				},
 				{
+					Method:  http.MethodGet,
+					Path:    "/file/download",
+					Handler: FileDownloadHandler(serverCtx),
+				},
+				{
 					Method:  http.MethodPost,
 					Path:    "/file/chunkupload/complete",
 					Handler: FileChunkUploadCompleteHandler(serverCtx),

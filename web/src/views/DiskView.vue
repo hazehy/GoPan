@@ -1,28 +1,55 @@
 <template>
-  <div class="container">
-    <div class="page-header">
-      <h2 class="page-title">我的网盘</h2>
-      <button class="btn btn-secondary" @click="logout">退出登录</button>
-    </div>
-
-    <ChunkUploader :parent-id="currentParentId" @success="refreshList" />
-
-    <div class="card">
-      <div class="toolbar">
+  <div class="container admin-container">
+    <div class="admin-layout disk-layout">
+      <aside class="card admin-sidebar disk-sidebar">
+        <h3 class="admin-sidebar-title">我的网盘</h3>
         <button
-          class="btn btn-secondary"
-          @click="goParent"
-          :disabled="breadcrumbs.length === 0"
+          class="admin-menu-item"
+          :class="{ 'admin-menu-item-active': activeTab === 'files' }"
+          type="button"
+          @click="activeTab = 'files'"
         >
-          返回上级
+          我的文件
         </button>
-        <button class="btn btn-primary" @click="createFolder">
-          新建文件夹
+        <button
+          class="admin-menu-item"
+          :class="{ 'admin-menu-item-active': activeTab === 'upload' }"
+          type="button"
+          @click="activeTab = 'upload'"
+        >
+          文件上传
         </button>
-        <button class="btn btn-secondary" @click="refreshList">刷新</button>
-      </div>
+      </aside>
 
-      <div class="path-bar">
+      <section class="admin-main disk-main">
+        <div class="page-header">
+          <h2 class="page-title">{{ currentTitle }}</h2>
+          <button class="btn btn-secondary" @click="logout">退出登录</button>
+        </div>
+
+        <ChunkUploader
+          v-if="activeTab === 'upload'"
+          :parent-id="currentParentId"
+          :browse-path="breadcrumbs"
+          @success="refreshList"
+        />
+
+        <div class="card" v-if="activeTab === 'files'">
+          <div class="toolbar">
+            <button
+              class="btn btn-secondary"
+              @click="goParent"
+              :disabled="breadcrumbs.length === 0"
+            >
+              返回上级
+            </button>
+            <button class="btn btn-primary" @click="createFolder">
+              新建文件夹
+            </button>
+            <button class="btn btn-secondary" @click="refreshList">刷新</button>
+          </div>
+
+          <div class="path-bar">
         <span class="muted">当前位置：</span>
         <a
           href="javascript:void(0)"
@@ -52,7 +79,7 @@
         </template>
       </div>
 
-      <div class="list-controls">
+          <div class="list-controls">
         <input
           class="input list-control-input"
           v-model.trim="keyword"
@@ -75,7 +102,7 @@
         </select>
       </div>
 
-      <table class="table file-table">
+          <table class="table file-table">
         <colgroup>
           <col class="file-col-name" />
           <col class="file-col-size" />
@@ -149,7 +176,7 @@
         </tbody>
       </table>
 
-      <div class="pagination">
+          <div class="pagination">
         <button
           class="btn btn-secondary"
           :disabled="page <= 1"
@@ -167,7 +194,9 @@
         <span class="muted">第 {{ page }} 页 / 共 {{ total }} 条</span>
       </div>
 
-      <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
+          <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
+        </div>
+      </section>
     </div>
 
     <div v-if="moveDialogVisible" class="dialog-mask" @click="closeMoveDialog">
@@ -245,6 +274,7 @@ import { useRouter } from "vue-router";
 import ChunkUploader from "@/components/ChunkUploader.vue";
 import {
   fileDeleteApi,
+  fileDownloadApi,
   fileListApi,
   fileMoveApi,
   fileRenameApi,
@@ -254,6 +284,7 @@ import {
 import type { UserFile } from "@/types/api";
 import { formatFileSize } from "@/utils/file";
 import { useAuthStore } from "@/stores/auth";
+import { useUploadQueueStore } from "@/stores/uploadQueue";
 import {
   validateFileOrFolderName,
   validateShareExpiresDaysText,
@@ -266,6 +297,7 @@ import {
 
 const router = useRouter();
 const authStore = useAuthStore();
+const uploadQueueStore = useUploadQueueStore();
 
 const allFiles = ref<UserFile[]>([]);
 const page = ref(1);
@@ -277,6 +309,7 @@ const keyword = ref("");
 const typeFilter = ref<"all" | "folder" | "file">("all");
 const sortBy = ref<"updated" | "name" | "size">("updated");
 const sortOrder = ref<"asc" | "desc">("desc");
+const activeTab = ref<"files" | "upload">("files");
 const moveDialogVisible = ref(false);
 const movingItem = ref<UserFile | null>(null);
 const moveParentId = ref(0);
@@ -286,6 +319,7 @@ const moveBreadcrumbs = ref<
 const moveFolderOptions = ref<UserFile[]>([]);
 const moveLoading = ref(false);
 const moveErrorMessage = ref("");
+const currentTitle = computed(() => (activeTab.value === "files" ? "我的文件" : "文件上传"));
 
 function isFolder(item: UserFile) {
   return !item.repository_identity;
@@ -539,19 +573,31 @@ function openFolder(item: UserFile) {
   refreshList();
 }
 
-function downloadFile(item: UserFile) {
+async function downloadFile(item: UserFile) {
   if (isFolder(item) || !item.path) {
     return;
   }
 
-  const link = document.createElement("a");
-  link.href = item.path;
-  link.download = `${item.name}${item.ext ?? ""}`;
-  link.target = "_blank";
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const filename = `${item.name}${item.ext ?? ""}`;
+    const { url } = await fileDownloadApi({
+      repository_identity: item.repository_identity,
+      filename,
+    });
+    if (!url) {
+      throw new Error("下载链接生成失败");
+    }
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_self";
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : String(error);
+  }
 }
 
 function goParent() {
@@ -762,6 +808,7 @@ async function createShare(item: UserFile) {
 }
 
 function logout() {
+  uploadQueueStore.haltAllByLogout();
   authStore.clearAuth();
   router.replace("/login");
 }

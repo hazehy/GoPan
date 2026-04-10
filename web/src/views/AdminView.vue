@@ -331,12 +331,14 @@ import {
   adminUserStatusUpdateApi,
 } from '@/api/modules/admin';
 import { useAuthStore } from '@/stores/auth';
+import { useUploadQueueStore } from '@/stores/uploadQueue';
 import type { AdminFileItem, AdminLogItem, AdminUserItem } from '@/types/api';
 import { formatFileSize } from '@/utils/file';
 import { confirmDialog } from '@/composables/useDialog';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const uploadQueueStore = useUploadQueueStore();
 const activeMenu = ref<'overview' | 'users' | 'files' | 'logs'>('overview');
 
 const overview = ref({
@@ -754,6 +756,7 @@ async function changeLogPage(nextPage: number) {
 }
 
 function logout() {
+  uploadQueueStore.haltAllByLogout();
   authStore.clearAuth();
   router.replace('/login');
 }

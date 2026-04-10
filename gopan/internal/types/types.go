@@ -38,6 +38,15 @@ type FileDeleteRequest struct {
 type FileDeleteResponse struct {
 }
 
+type FileDownloadRequest struct {
+	RepositoryIdentity string `json:"repository_identity,optional" form:"repository_identity"`
+	Filename           string `json:"filename,optional" form:"filename"`
+}
+
+type FileDownloadResponse struct {
+	Url string `json:"url"`
+}
+
 type FileListRequest struct {
 	Id   int64 `json:"id,optional" form:"id"`
 	Page int   `json:"page,optional" form:"page"`
@@ -83,6 +92,7 @@ type FileUploadRequest struct {
 	Ext  string `json:"ext,optional"`
 	Size int64  `json:"size,optional"`
 	Path string `json:"path,optional"`
+	Key  string `json:"key,optional"`
 }
 
 type FileUploadResponse struct {

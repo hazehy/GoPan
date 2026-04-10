@@ -36,6 +36,9 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(ROLE_KEY);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gopan-auth-cleared'));
+      }
     },
   },
 });

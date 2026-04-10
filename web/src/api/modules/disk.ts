@@ -1,6 +1,7 @@
 import http from '@/api/http';
 import type {
   FileChunkUploadResponse,
+  FileDownloadResponse,
   FileListResponse,
   FilePreUploadResponse,
   FileUploadResponse,
@@ -29,6 +30,12 @@ export function fileDeleteApi(identity: string) {
   });
 }
 
+export function fileDownloadApi(payload: { repository_identity: string; filename: string }) {
+  return http.get<never, FileDownloadResponse>('/file/download', {
+    params: payload,
+  });
+}
+
 export function shareCreateApi(payload: { repository_identity: string; expires: number }) {
   return http.post<never, ShareCreateResponse>('/share/create', payload);
 }
@@ -37,11 +44,9 @@ export function filePreUploadApi(payload: { md5: string; name: string; ext: stri
   return http.post<never, FilePreUploadResponse>('/file/preupload', payload);
 }
 
-export function fileChunkUploadApi(formData: FormData) {
+export function fileChunkUploadApi(formData: FormData, signal?: AbortSignal) {
   return http.post<never, FileChunkUploadResponse>('/file/chunkupload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    signal,
   });
 }
 
@@ -49,8 +54,8 @@ export function fileChunkUploadCompleteApi(payload: {
   key: string;
   upload_id: string;
   cos_objects: Array<{ part_number: number; etag: string }>;
-}) {
-  return http.post('/file/chunkupload/complete', payload);
+}, signal?: AbortSignal) {
+  return http.post('/file/chunkupload/complete', payload, { signal });
 }
 
 export function fileUploadApi(payload: {
@@ -58,9 +63,10 @@ export function fileUploadApi(payload: {
   name: string;
   ext: string;
   size: number;
-  path: string;
-}) {
-  return http.post<never, FileUploadResponse>('/file/upload', payload);
+  path?: string;
+  key?: string;
+}, signal?: AbortSignal) {
+  return http.post<never, FileUploadResponse>('/file/upload', payload, { signal });
 }
 
 export function userRepositoryApi(payload: {
@@ -68,6 +74,6 @@ export function userRepositoryApi(payload: {
   repository_identity: string;
   ext: string;
   name: string;
-}) {
-  return http.post('/user/repository', payload);
+}, signal?: AbortSignal) {
+  return http.post('/user/repository', payload, { signal });
 }

@@ -110,6 +110,10 @@ export interface FileUploadResponse {
   name: string;
 }
 
+export interface FileDownloadResponse {
+  url: string;
+}
+
 export interface ShareCreateResponse {
   identity: string;
 }

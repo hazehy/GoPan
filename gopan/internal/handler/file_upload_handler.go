@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"gopan/gopan/define"
 	"gopan/gopan/helper"
 	"gopan/gopan/internal/logic"
 	"gopan/gopan/internal/svc"
@@ -29,7 +30,14 @@ func FileUploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		if req.Hash != "" && req.Name != "" && req.Path != "" && req.Size > 0 {
+		if req.Hash != "" && req.Name != "" && req.Size > 0 {
+			if req.Path == "" && req.Key != "" {
+				req.Path = strings.TrimRight(define.COSBucketURL, "/") + "/" + req.Key
+			}
+			if req.Path == "" {
+				httpx.ErrorCtx(r.Context(), w, errors.New("path是空的"))
+				return
+			}
 			rp := new(models.RepositoryPool)
 			has, err := svcCtx.Engine.Where("hash = ?", req.Hash).Get(rp)
 			if err != nil {

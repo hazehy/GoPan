@@ -2,6 +2,8 @@ FROM golang:1.25.7-alpine AS builder
 
 WORKDIR /src
 RUN apk add --no-cache git ca-certificates tzdata
+ENV GOPROXY=https://goproxy.cn,direct \
+    GOSUMDB=sum.golang.org
 
 COPY go.mod go.sum ./
 RUN go mod download

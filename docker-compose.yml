@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4
+    image: ${MYSQL_IMAGE:-mysql:8.4}
     container_name: gopan-mysql
     restart: unless-stopped
     environment:
@@ -20,7 +20,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: gopan-redis
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]

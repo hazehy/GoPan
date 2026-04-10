@@ -221,6 +221,112 @@ npm run build
 - 敏感信息统一走环境变量或本地私有配置
 - 建议按环境维护配置文件（dev/test/prod）
 
+## Docker 云端部署（Linux）
+
+项目已提供 Docker 化部署文件，可直接在云服务器上通过 `docker compose` 一键启动：
+
+- `docker-compose.yml`
+- `gopan/Dockerfile`（后端镜像）
+- `gopan/etc/gopan-api.docker.yaml`（后端容器配置模板）
+- `web/Dockerfile`（前端镜像）
+- `web/nginx/default.conf`（前端 Nginx + API 反向代理）
+- `.env.example`（环境变量示例）
+
+### 1. 服务器准备
+
+建议环境：
+
+- Linux x86_64
+- Docker >= 24
+- Docker Compose Plugin >= 2.20
+
+Ubuntu 示例安装：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+### 2. 拉取代码并配置环境
+
+```bash
+git clone <your-repo-url> GoPan
+cd GoPan
+cp .env.example .env
+```
+
+编辑 `.env`，至少修改以下关键配置：
+
+- `MYSQL_ROOT_PASSWORD`
+- `GOPAN_JWT_KEY`
+- `GOPAN_FROM_MAIL` / `GOPAN_MAIL_PASSWORD`
+- `GOPAN_TENCENT_SECRET_ID` / `GOPAN_TENCENT_SECRET_KEY` / `GOPAN_COS_BUCKET_URL`
+
+### 3. 启动服务
+
+```bash
+docker compose up -d --build
+```
+
+服务说明：
+
+- `mysql`：自动执行 `databases.sql` 初始化表结构
+- `redis`：缓存
+- `backend`：Go API，容器内监听 `8888`
+- `frontend`：Nginx 托管前端并反代 `/api/* -> backend:8888/*`
+
+### 4. 验证部署
+
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
+浏览器访问：
+
+- `http://<服务器公网IP>/`
+
+API 健康检查示例：
+
+```bash
+curl -i http://127.0.0.1:8888/user/detail
+```
+
+### 5. 常用运维命令
+
+重启：
+
+```bash
+docker compose restart
+```
+
+更新发布：
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+停止并保留数据：
+
+```bash
+docker compose down
+```
+
+彻底清理（会删除 MySQL/Redis 数据卷）：
+
+```bash
+docker compose down -v
+```
+
 ## 常见问题
 
 ### 后端启动失败

@@ -1,0 +1,15 @@
+Name: gopan-api
+Host: 0.0.0.0
+Port: 8888
+
+MaxBytes: 10485760
+Timeout: 120000
+
+Middlewares:
+  Timeout: true
+
+MySql:
+  Database: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True&loc=Local
+
+Redis:
+  Addr: ${GOPAN_REDIS_ADDR}

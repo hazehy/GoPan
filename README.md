@@ -38,6 +38,23 @@ GoPan/
 
 ## 快速开始
 
+### Docker 一键部署
+
+如果你在 Linux 服务器上部署，优先使用仓库根目录的 `deploy-docker.sh`。
+
+```bash
+chmod +x deploy-docker.sh
+./deploy-docker.sh
+```
+
+脚本会做这些事：
+
+- 检查并安装 Docker / Docker Compose
+- 如果没有 `.env`，自动从 `.env.example` 生成
+- 使用 `docker compose up -d --build` 启动整套服务
+
+部署前请先修改 `.env` 里的数据库密码和 `GOPAN_JWT_KEY`，以及 COS / SMTP 相关配置。
+
 ### 1. 初始化数据库
 
 1. 创建数据库，例如 `gopan`

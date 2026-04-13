@@ -73,6 +73,9 @@ func (l *UserLoginLogic) UserLogin(req *types.LoginRequest) (resp *types.LoginRe
 	resp.Token = token
 	resp.RefreshToken = refreshtoken
 	resp.Role = user.Role
+	resp.UploadPermission = user.UploadPermission
+	resp.DownloadPermission = user.DownloadPermission
+	resp.SharePermission = user.SharePermission
 	helper.AddAuditLog(l.svcCtx.Engine, user.Identity, user.Name, user.Role, "USER_LOGIN", "user", user.Identity, "用户登录")
 	return resp, nil
 }

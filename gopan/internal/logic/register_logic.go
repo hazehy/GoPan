@@ -63,12 +63,15 @@ func (l *RegisterLogic) Register(req *types.RegisterRequest) (resp *types.Regist
 	}
 	// 创建用户
 	user := &models.User{
-		Identity: helper.GenerateUUID(),
-		Name:     req.Name,
-		Password: helper.Bcrypt(req.Password),
-		Email:    req.Email,
-		Status:   1,
-		Role:     1,
+		Identity:           helper.GenerateUUID(),
+		Name:               req.Name,
+		Password:           helper.Bcrypt(req.Password),
+		Email:              req.Email,
+		Status:             1,
+		Role:               1,
+		UploadPermission:   1,
+		DownloadPermission: 1,
+		SharePermission:    1,
 	}
 	a, err := l.svcCtx.Engine.Insert(user)
 	if err != nil {

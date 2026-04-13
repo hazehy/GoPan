@@ -22,7 +22,7 @@ func FileDownloadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewFileDownloadLogic(r.Context(), svcCtx)
-		resp, err := l.FileDownload(&req)
+		resp, err := l.FileDownload(&req, requestUserIdentity(r))
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return

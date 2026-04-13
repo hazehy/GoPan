@@ -28,24 +28,19 @@ func NewAdminUserListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Adm
 }
 
 func (l *AdminUserListLogic) AdminUserList(req *types.AdminUserListRequest) (resp *types.AdminUserListResponse, err error) {
-	page := req.Page
-	if page <= 0 {
-		page = 1
-	}
-	size := req.Size
-	if size <= 0 {
-		size = define.PageSize
-	}
-	offset := (page - 1) * size
+	_, size, offset := normalizePageAndSize(req.Page, req.Size)
 
 	type userRow struct {
-		Identity    string    `xorm:"identity"`
-		Name        string    `xorm:"name"`
-		Email       string    `xorm:"email"`
-		Status      int       `xorm:"status"`
-		Role        int       `xorm:"role"`
-		LastLoginAt time.Time `xorm:"last_login_at"`
-		CreatedAt   time.Time `xorm:"created_at"`
+		Identity           string    `xorm:"identity"`
+		Name               string    `xorm:"name"`
+		Email              string    `xorm:"email"`
+		Status             int       `xorm:"status"`
+		Role               int       `xorm:"role"`
+		UploadPermission   int       `xorm:"upload_permission"`
+		DownloadPermission int       `xorm:"download_permission"`
+		SharePermission    int       `xorm:"share_permission"`
+		LastLoginAt        time.Time `xorm:"last_login_at"`
+		CreatedAt          time.Time `xorm:"created_at"`
 	}
 
 	rows := make([]*userRow, 0)
@@ -60,7 +55,7 @@ func (l *AdminUserListLogic) AdminUserList(req *types.AdminUserListRequest) (res
 	}
 
 	err = querySession.
-		Select("identity, name, email, status, role, last_login_at, created_at").
+		Select("identity, name, email, status, role, upload_permission, download_permission, share_permission, last_login_at, created_at").
 		Desc("id").
 		Limit(size, offset).
 		Find(&rows)
@@ -76,11 +71,14 @@ func (l *AdminUserListLogic) AdminUserList(req *types.AdminUserListRequest) (res
 	list := make([]*types.AdminUserItem, 0, len(rows))
 	for _, row := range rows {
 		item := &types.AdminUserItem{
-			Identity: row.Identity,
-			Name:     row.Name,
-			Email:    row.Email,
-			Status:   row.Status,
-			Role:     row.Role,
+			Identity:           row.Identity,
+			Name:               row.Name,
+			Email:              row.Email,
+			Status:             row.Status,
+			Role:               row.Role,
+			UploadPermission:   row.UploadPermission,
+			DownloadPermission: row.DownloadPermission,
+			SharePermission:    row.SharePermission,
 		}
 		if !row.LastLoginAt.IsZero() {
 			item.LastLoginAt = row.LastLoginAt.Format(define.DateFormat)

@@ -1,6 +1,5 @@
 package types
 
-// TODO: 将用户权限划分为分享权限，下载权限，上传权限，由管理员控制用户每个权限
 type AdminOverviewResponse struct {
 	TotalUsers     int64           `json:"total_users"`
 	ActiveUsers    int64           `json:"active_users"`
@@ -25,13 +24,16 @@ type AdminUserListRequest struct {
 }
 
 type AdminUserItem struct {
-	Identity    string `json:"identity"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Status      int    `json:"status"`
-	Role        int    `json:"role"`
-	LastLoginAt string `json:"last_login_at"`
-	CreatedAt   string `json:"created_at"`
+	Identity           string `json:"identity"`
+	Name               string `json:"name"`
+	Email              string `json:"email"`
+	Status             int    `json:"status"`
+	Role               int    `json:"role"`
+	UploadPermission   int    `json:"upload_permission"`
+	DownloadPermission int    `json:"download_permission"`
+	SharePermission    int    `json:"share_permission"`
+	LastLoginAt        string `json:"last_login_at"`
+	CreatedAt          string `json:"created_at"`
 }
 
 type AdminUserListResponse struct {
@@ -40,8 +42,11 @@ type AdminUserListResponse struct {
 }
 
 type AdminUserStatusUpdateRequest struct {
-	Identity string `json:"identity"`
-	Status   int    `json:"status"`
+	Identity           string `json:"identity"`
+	Status             *int   `json:"status,optional" form:"status,optional"`
+	UploadPermission   *int   `json:"upload_permission,optional" form:"upload_permission,optional"`
+	DownloadPermission *int   `json:"download_permission,optional" form:"download_permission,optional"`
+	SharePermission    *int   `json:"share_permission,optional" form:"share_permission,optional"`
 }
 
 type AdminFileListRequest struct {

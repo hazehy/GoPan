@@ -46,7 +46,6 @@ export interface UploadTask {
 interface RuntimeTaskContext {
   file: File;
   abortController: AbortController | null;
-  uploadStartAt: number;
   speedStartAt: number;
   speedBaseUploadedBytes: number;
 }
@@ -131,6 +130,13 @@ function isCanceledError(error: unknown) {
   );
 }
 
+function markTaskFailed(task: UploadTask, message: string) {
+  task.status = "failed";
+  task.errorMessage = message;
+  task.speedBytesPerSec = 0;
+  task.updatedAt = Date.now();
+}
+
 export const useUploadQueueStore = defineStore("uploadQueue", {
   state: (): UploadQueueState => ({
     tasks: [],
@@ -189,7 +195,6 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
         runtimeTaskMap.set(taskId, {
           file,
           abortController: null,
-          uploadStartAt: 0,
           speedStartAt: 0,
           speedBaseUploadedBytes: 0,
         });
@@ -217,7 +222,6 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
       runtimeTaskMap.set(taskId, {
         file,
         abortController: null,
-        uploadStartAt: 0,
         speedStartAt: 0,
         speedBaseUploadedBytes: 0,
       });
@@ -258,9 +262,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
       }
 
       if (!task.hasLocalFile || !runtimeTaskMap.has(taskId)) {
-        task.status = "failed";
-        task.errorMessage = "任务文件句柄已失效，请重新选择文件上传";
-        task.updatedAt = Date.now();
+        markTaskFailed(task, "任务文件句柄已失效，请重新选择文件上传");
         persistTasks(this.tasks);
         return;
       }
@@ -369,18 +371,14 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
 
       const runtime = runtimeTaskMap.get(taskId);
       if (!runtime) {
-        task.status = "failed";
-        task.errorMessage = "任务文件句柄已失效，请重新选择文件上传";
-        task.updatedAt = Date.now();
+        markTaskFailed(task, "任务文件句柄已失效，请重新选择文件上传");
         persistTasks(this.tasks);
         return;
       }
 
       const file = runtime.file;
       if (file.size <= 0) {
-        task.status = "failed";
-        task.errorMessage = "文件大小不能为 0";
-        task.updatedAt = Date.now();
+        markTaskFailed(task, "文件大小不能为 0");
         persistTasks(this.tasks);
         await this.processNext();
         return;
@@ -389,18 +387,14 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
       const { name, ext } = splitNameAndExt(file.name);
       const fileNameError = validateFileOrFolderName(name);
       if (fileNameError) {
-        task.status = "failed";
-        task.errorMessage = fileNameError;
-        task.updatedAt = Date.now();
+        markTaskFailed(task, fileNameError);
         persistTasks(this.tasks);
         await this.processNext();
         return;
       }
 
       if ((ext ?? "").length > 20) {
-        task.status = "failed";
-        task.errorMessage = "文件扩展名过长";
-        task.updatedAt = Date.now();
+        markTaskFailed(task, "文件扩展名过长");
         persistTasks(this.tasks);
         await this.processNext();
         return;
@@ -408,7 +402,6 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
 
       const controller = new AbortController();
       runtime.abortController = controller;
-      runtime.uploadStartAt = Date.now();
       runtime.speedStartAt = Date.now();
       runtime.speedBaseUploadedBytes = task.uploadedBytes;
 
@@ -426,6 +419,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
       persistTasks(this.tasks);
 
       try {
+        // Step 1: hash + pre-upload negotiation (fast pass for deduplicated file).
         let md5 = task.md5;
         if (!md5) {
           md5 = await calcFileMd5(file);
@@ -486,6 +480,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
         const totalChunks = task.totalChunks;
         const startPart = Math.max(1, task.nextPartNumber);
 
+        // Step 2: resumable chunk upload loop; keep nextPartNumber/uploadParts durable in localStorage.
         for (let partNumber = startPart; partNumber <= totalChunks; partNumber += 1) {
           if (task.status !== "uploading") {
             return;
@@ -559,6 +554,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
           throw new Error("文件入库失败：未获取到 repository identity");
         }
 
+        // Step 3: link uploaded object into user's repository tree.
         await userRepositoryApi(
           {
             parent_id: task.parentId,
@@ -594,10 +590,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
           return;
         }
 
-        task.status = "failed";
-        task.errorMessage = error instanceof Error ? error.message : String(error);
-        task.speedBytesPerSec = 0;
-        task.updatedAt = Date.now();
+        markTaskFailed(task, error instanceof Error ? error.message : String(error));
         persistTasks(this.tasks);
       } finally {
         runtime.abortController = null;

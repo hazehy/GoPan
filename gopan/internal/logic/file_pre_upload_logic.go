@@ -28,7 +28,11 @@ func NewFilePreUploadLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Fil
 	}
 }
 
-func (l *FilePreUploadLogic) FilePreUpload(req *types.FilePreUploadRequest) (resp *types.FilePreUploadResponse, err error) {
+func (l *FilePreUploadLogic) FilePreUpload(req *types.FilePreUploadRequest, userIdentity string) (resp *types.FilePreUploadResponse, err error) {
+	if err := ensureUserCanUpload(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	rp := new(models.RepositoryPool)
 	has, err := l.svcCtx.Engine.Where("hash = ?", req.Md5).Get(rp)
 	if err != nil {

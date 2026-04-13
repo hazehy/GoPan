@@ -30,6 +30,11 @@ func FileUploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
+		if err := logic.EnsureUserCanUpload(svcCtx, requestUserIdentity(r)); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		if req.Hash != "" && req.Name != "" && req.Size > 0 {
 			if req.Path == "" && req.Key != "" {
 				req.Path = strings.TrimRight(define.COSBucketURL, "/") + "/" + req.Key

@@ -20,10 +20,6 @@ func AdminLogListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 		l := logic.NewAdminLogListLogic(r.Context(), svcCtx)
 		resp, err := l.AdminLogList(&req)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
-		}
+		writeLogicJSON(r.Context(), w, resp, err)
 	}
 }

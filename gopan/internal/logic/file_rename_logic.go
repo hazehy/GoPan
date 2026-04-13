@@ -35,7 +35,6 @@ func (l *FileRenameLogic) FileRename(req *types.FileRenameRequest, userIdentity 
 		return nil, errors.New("名称不合法")
 	}
 
-	// TODO:新文件名与原文件同名  弹幕(一个用户下文件名不能重复，不同用户文件名也不能重复)
 	cnt, err := l.svcCtx.Engine.Where("name = ? AND parent_id = (SELECT parent_id FROM user_repository WHERE user_repository.identity = ?)", req.Name, req.Identity).Count(new(models.UserRepository))
 	if err != nil {
 		return nil, err

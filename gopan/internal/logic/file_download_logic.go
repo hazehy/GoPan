@@ -34,7 +34,11 @@ func NewFileDownloadLogic(ctx context.Context, svcCtx *svc.ServiceContext) *File
 	}
 }
 
-func (l *FileDownloadLogic) FileDownload(req *types.FileDownloadRequest) (resp *types.FileDownloadResponse, err error) {
+func (l *FileDownloadLogic) FileDownload(req *types.FileDownloadRequest, userIdentity string) (resp *types.FileDownloadResponse, err error) {
+	if err := ensureUserCanDownload(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	if strings.TrimSpace(req.RepositoryIdentity) == "" {
 		return nil, fmt.Errorf("资源标识不能为空")
 	}

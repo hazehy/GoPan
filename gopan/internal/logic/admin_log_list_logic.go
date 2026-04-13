@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -28,15 +29,7 @@ func NewAdminLogListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Admi
 }
 
 func (l *AdminLogListLogic) AdminLogList(req *types.AdminLogListRequest) (resp *types.AdminLogListResponse, err error) {
-	size := req.Size
-	if size <= 0 {
-		size = define.PageSize
-	}
-	page := req.Page
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * size
+	_, size, offset := normalizePageAndSize(req.Page, req.Size)
 
 	querySession := l.svcCtx.Engine.Table("audit_log").Where("deleted_at IS NULL")
 	countSession := l.svcCtx.Engine.Table("audit_log").Where("deleted_at IS NULL")
@@ -54,27 +47,28 @@ func (l *AdminLogListLogic) AdminLogList(req *types.AdminLogListRequest) (resp *
 		normalizedExt := strings.ToLower(strings.TrimPrefix(fileExt, "."))
 		if normalizedExt != "" {
 			detailLike := "%file_ext=" + normalizedExt + "%"
-			querySession = querySession.And("detail LIKE ?", detailLike)
-			countSession = countSession.And("detail LIKE ?", detailLike)
+			querySession = querySession.And("LOWER(detail) LIKE ?", detailLike)
+			countSession = countSession.And("LOWER(detail) LIKE ?", detailLike)
 		}
 	}
 	if sharer := strings.TrimSpace(req.Sharer); sharer != "" {
+		normalizedSharer := strings.ToLower(sharer)
 		likeSharer := "%" + sharer + "%"
-		querySession = querySession.And("(detail LIKE ? OR actor_name LIKE ?)", "%sharer_name=%"+sharer+"%", likeSharer)
-		countSession = countSession.And("(detail LIKE ? OR actor_name LIKE ?)", "%sharer_name=%"+sharer+"%", likeSharer)
+		querySession = querySession.And("(LOWER(detail) LIKE ? OR actor_name LIKE ?)", "%sharer_name=%"+normalizedSharer+"%", likeSharer)
+		countSession = countSession.And("(LOWER(detail) LIKE ? OR actor_name LIKE ?)", "%sharer_name=%"+normalizedSharer+"%", likeSharer)
 	}
 	if saver := strings.TrimSpace(req.Saver); saver != "" {
+		normalizedSaver := strings.ToLower(saver)
 		likeSaver := "%" + saver + "%"
-		querySession = querySession.And("(detail LIKE ? OR actor_name LIKE ?)", "%saver_name=%"+saver+"%", likeSaver)
-		countSession = countSession.And("(detail LIKE ? OR actor_name LIKE ?)", "%saver_name=%"+saver+"%", likeSaver)
+		querySession = querySession.And("(LOWER(detail) LIKE ? OR actor_name LIKE ?)", "%saver_name=%"+normalizedSaver+"%", likeSaver)
+		countSession = countSession.And("(LOWER(detail) LIKE ? OR actor_name LIKE ?)", "%saver_name=%"+normalizedSaver+"%", likeSaver)
 	}
 	if day := strings.TrimSpace(req.Day); day != "" {
-		parsedDay, parseErr := time.Parse("2006-01-02", day)
-		if parseErr == nil {
-			dayText := parsedDay.Format("2006-01-02")
-			querySession = querySession.And("DATE(created_at) = ?", dayText)
-			countSession = countSession.And("DATE(created_at) = ?", dayText)
+		if _, parseErr := time.Parse("2006-01-02", day); parseErr != nil {
+			return nil, errors.New("day 参数格式应为 YYYY-MM-DD")
 		}
+		querySession = querySession.And("DATE(created_at) = ?", day)
+		countSession = countSession.And("DATE(created_at) = ?", day)
 	}
 	if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 		like := "%" + keyword + "%"

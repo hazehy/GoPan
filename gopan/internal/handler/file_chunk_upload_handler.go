@@ -36,6 +36,11 @@ func FileChunkUploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
+		if err := logic.EnsureUserCanUpload(svcCtx, requestUserIdentity(r)); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		partETag, err := helper.CosChunkUpload(r)
 		if err != nil {
 			httpx.Error(w, err)

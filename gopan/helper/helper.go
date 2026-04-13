@@ -163,22 +163,15 @@ func GenerateUUID() string {
 
 // COSUpLoad COS上传文件
 func COSUpLoad(r *http.Request) (string, error) {
-	if err := validateCOSConfig(); err != nil {
+	client, err := buildCOSClient()
+	if err != nil {
 		return "", err
 	}
-
-	u, _ := url.Parse(define.COSBucketURL)
-	b := &cos.BaseURL{BucketURL: u}
-	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  define.TencentSecretID,
-			SecretKey: define.TencentSecretKey,
-		},
-	})
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		return "", err
 	}
+	defer file.Close()
 	key := "gopan/" + GenerateUUID() + path.Ext(fileHeader.Filename)
 
 	_, err = client.Object.Put(
@@ -192,18 +185,10 @@ func COSUpLoad(r *http.Request) (string, error) {
 
 // CosChunkInit COS分片上传初始化
 func CosChunkInit(ext string) (string, string, error) {
-	if err := validateCOSConfig(); err != nil {
+	client, err := buildCOSClient()
+	if err != nil {
 		return "", "", err
 	}
-
-	u, _ := url.Parse(define.COSBucketURL)
-	b := &cos.BaseURL{BucketURL: u}
-	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  define.TencentSecretID,
-			SecretKey: define.TencentSecretKey,
-		},
-	})
 	key := "gopan/" + GenerateUUID() + ext
 	v, _, err := client.Object.InitiateMultipartUpload(
 		context.Background(), key, nil,
@@ -216,18 +201,10 @@ func CosChunkInit(ext string) (string, string, error) {
 
 // CosChunkUpload COS分片上传
 func CosChunkUpload(r *http.Request) (string, error) {
-	if err := validateCOSConfig(); err != nil {
+	client, err := buildCOSClient()
+	if err != nil {
 		return "", err
 	}
-
-	u, _ := url.Parse(define.COSBucketURL)
-	b := &cos.BaseURL{BucketURL: u}
-	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  define.TencentSecretID,
-			SecretKey: define.TencentSecretKey,
-		},
-	})
 	uploadID := r.PostForm.Get("upload_id")
 	key := r.PostForm.Get("key")
 	partNumber, err := strconv.Atoi(r.PostForm.Get("part_number"))
@@ -238,8 +215,11 @@ func CosChunkUpload(r *http.Request) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 	buf := bytes.NewBuffer(nil)
-	io.Copy(buf, f)
+	if _, err := io.Copy(buf, f); err != nil {
+		return "", err
+	}
 	resp, err := client.Object.UploadPart(
 		context.Background(), key, uploadID, partNumber, bytes.NewReader(buf.Bytes()), nil,
 	)
@@ -252,11 +232,30 @@ func CosChunkUpload(r *http.Request) (string, error) {
 
 // CosChunkComplete COS分片上传完成
 func CosChunkComplete(key, uploadID string, parts []cos.Object) error {
-	if err := validateCOSConfig(); err != nil {
+	client, err := buildCOSClient()
+	if err != nil {
 		return err
 	}
+	opt := &cos.CompleteMultipartUploadOptions{}
+	opt.Parts = append(opt.Parts, parts...)
+	_, _, err = client.Object.CompleteMultipartUpload(
+		context.Background(), key, uploadID, opt,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	u, _ := url.Parse(define.COSBucketURL)
+func buildCOSClient() (*cos.Client, error) {
+	if err := validateCOSConfig(); err != nil {
+		return nil, err
+	}
+
+	u, err := url.Parse(define.COSBucketURL)
+	if err != nil {
+		return nil, err
+	}
 	b := &cos.BaseURL{BucketURL: u}
 	client := cos.NewClient(b, &http.Client{
 		Transport: &cos.AuthorizationTransport{
@@ -264,15 +263,7 @@ func CosChunkComplete(key, uploadID string, parts []cos.Object) error {
 			SecretKey: define.TencentSecretKey,
 		},
 	})
-	opt := &cos.CompleteMultipartUploadOptions{}
-	opt.Parts = append(opt.Parts, parts...)
-	_, _, err := client.Object.CompleteMultipartUpload(
-		context.Background(), key, uploadID, opt,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
+	return client, nil
 }
 
 func validateCOSConfig() error {

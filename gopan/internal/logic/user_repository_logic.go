@@ -31,6 +31,10 @@ func NewUserRepositoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Us
 }
 
 func (l *UserRepositoryLogic) UserRepository(req *types.UserRepositoryRequest, userIdentity string) (resp *types.UserRepositoryResponse, err error) {
+	if err := ensureUserCanUpload(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	req.Name = helper.NormalizeInput(req.Name)
 	req.RepositoryIdentity = helper.NormalizeInput(req.RepositoryIdentity)
 

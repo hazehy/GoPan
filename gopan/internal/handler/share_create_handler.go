@@ -22,7 +22,7 @@ func ShareCreateHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewShareCreateLogic(r.Context(), svcCtx)
-		resp, err := l.ShareCreate(&req, r.Header.Get("userIdentity"))
+		resp, err := l.ShareCreate(&req, requestUserIdentity(r))
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

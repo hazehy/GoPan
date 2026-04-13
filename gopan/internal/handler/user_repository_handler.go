@@ -22,7 +22,7 @@ func UserRepositoryHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewUserRepositoryLogic(r.Context(), svcCtx)
-		resp, err := l.UserRepository(&req, r.Header.Get("UserIdentity"))
+		resp, err := l.UserRepository(&req, requestUserIdentity(r))
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

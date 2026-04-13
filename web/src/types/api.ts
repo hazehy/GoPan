@@ -6,6 +6,9 @@ export interface LoginResponse {
   token: string;
   refresh_token: string;
   role: number;
+  upload_permission: number;
+  download_permission: number;
+  share_permission: number;
 }
 
 export interface AdminOverviewResponse {
@@ -29,6 +32,9 @@ export interface AdminUserItem {
   email: string;
   status: number;
   role: number;
+  upload_permission: number;
+  download_permission: number;
+  share_permission: number;
   last_login_at: string;
   created_at: string;
 }
@@ -76,6 +82,9 @@ export interface AdminLogListResponse {
 export interface UserDetailResponse {
   name: string;
   email: string;
+  upload_permission: number;
+  download_permission: number;
+  share_permission: number;
 }
 
 export interface UserFile {

@@ -6,10 +6,11 @@ package handler
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"gopan/gopan/internal/logic"
 	"gopan/gopan/internal/svc"
 	"gopan/gopan/internal/types"
+
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func FilePreUploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -21,7 +22,7 @@ func FilePreUploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewFilePreUploadLogic(r.Context(), svcCtx)
-		resp, err := l.FilePreUpload(&req)
+		resp, err := l.FilePreUpload(&req, requestUserIdentity(r))
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

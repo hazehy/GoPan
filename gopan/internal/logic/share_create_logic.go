@@ -32,6 +32,10 @@ func NewShareCreateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Share
 }
 
 func (l *ShareCreateLogic) ShareCreate(req *types.ShareCreateRequest, userIdentity string) (resp *types.ShareCreateResponse, err error) {
+	if err := ensureUserCanShare(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	if helper.NormalizeInput(req.RepositoryIdentity) == "" {
 		return nil, errors.New("资源标识不能为空")
 	}

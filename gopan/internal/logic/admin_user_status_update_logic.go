@@ -3,6 +3,8 @@ package logic
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"gopan/gopan/helper"
 	"gopan/gopan/internal/svc"
@@ -27,8 +29,21 @@ func NewAdminUserStatusUpdateLogic(ctx context.Context, svcCtx *svc.ServiceConte
 }
 
 func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserStatusUpdateRequest) error {
-	if req.Status != 1 && req.Status != 2 {
+	if req.Status == nil && req.UploadPermission == nil && req.DownloadPermission == nil && req.SharePermission == nil {
+		return errors.New("至少需要更新一个字段")
+	}
+
+	if req.Status != nil && *req.Status != 1 && *req.Status != 2 {
 		return errors.New("用户状态仅支持 1(正常) 或 2(禁用)")
+	}
+	if req.UploadPermission != nil && *req.UploadPermission != 1 && *req.UploadPermission != 2 {
+		return errors.New("上传权限仅支持 1(允许) 或 2(禁止)")
+	}
+	if req.DownloadPermission != nil && *req.DownloadPermission != 1 && *req.DownloadPermission != 2 {
+		return errors.New("下载权限仅支持 1(允许) 或 2(禁止)")
+	}
+	if req.SharePermission != nil && *req.SharePermission != 1 && *req.SharePermission != 2 {
+		return errors.New("分享权限仅支持 1(允许) 或 2(禁止)")
 	}
 
 	target := new(models.User)
@@ -43,9 +58,38 @@ func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserS
 		return errors.New("不能修改管理员状态")
 	}
 
-	_, err = l.svcCtx.Engine.Where("identity = ?", req.Identity).Cols("status").Update(&models.User{Status: req.Status})
+	updated := &models.User{}
+	cols := make([]string, 0, 4)
+	auditParts := make([]string, 0, 4)
+
+	if req.Status != nil {
+		updated.Status = *req.Status
+		cols = append(cols, "status")
+		auditParts = append(auditParts, fmt.Sprintf("status=%d", *req.Status))
+	}
+	if req.UploadPermission != nil {
+		updated.UploadPermission = *req.UploadPermission
+		cols = append(cols, "upload_permission")
+		auditParts = append(auditParts, fmt.Sprintf("upload_permission=%d", *req.UploadPermission))
+	}
+	if req.DownloadPermission != nil {
+		updated.DownloadPermission = *req.DownloadPermission
+		cols = append(cols, "download_permission")
+		auditParts = append(auditParts, fmt.Sprintf("download_permission=%d", *req.DownloadPermission))
+	}
+	if req.SharePermission != nil {
+		updated.SharePermission = *req.SharePermission
+		cols = append(cols, "share_permission")
+		auditParts = append(auditParts, fmt.Sprintf("share_permission=%d", *req.SharePermission))
+	}
+
+	if len(cols) == 0 {
+		return errors.New("没有有效的更新字段")
+	}
+
+	_, err = l.svcCtx.Engine.Where("identity = ?", req.Identity).Cols(cols...).Update(updated)
 	if err == nil {
-		helper.AddAuditLog(l.svcCtx.Engine, "SYSTEM", "admin", 2, "USER_STATUS_UPDATE", "user", target.Identity, "管理员更新用户状态")
+		helper.AddAuditLog(l.svcCtx.Engine, "SYSTEM", "admin", 2, "USER_STATUS_UPDATE", "user", target.Identity, "管理员更新用户状态与权限: "+strings.Join(auditParts, ";"))
 	}
 	return err
 }

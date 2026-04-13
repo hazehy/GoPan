@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"gopan/gopan/define"
 	"gopan/gopan/internal/svc"
 	"gopan/gopan/internal/types"
 	"gopan/gopan/models"
@@ -28,15 +27,7 @@ func NewAdminFileListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Adm
 }
 
 func (l *AdminFileListLogic) AdminFileList(req *types.AdminFileListRequest) (resp *types.AdminFileListResponse, err error) {
-	page := req.Page
-	if page <= 0 {
-		page = 1
-	}
-	size := req.Size
-	if size <= 0 {
-		size = define.PageSize
-	}
-	offset := (page - 1) * size
+	_, size, offset := normalizePageAndSize(req.Page, req.Size)
 
 	type adminFileRow struct {
 		Id                 int64  `xorm:"id"`
@@ -113,14 +104,20 @@ func (l *AdminFileListLogic) buildDirectoryPath(userIdentity string, parentID in
 		return "根目录", nil
 	}
 
-	segments := make([]string, 0, 8)
+	type folderNode struct {
+		Id       int64
+		ParentId int64
+		Name     string
+	}
+
+	lineage := make([]folderNode, 0, 8)
 	currentID := parentID
+	prefix := ""
+
 	for currentID > 0 {
 		cacheKey := fmt.Sprintf("%s:%d", userIdentity, currentID)
 		if cached, ok := cache[cacheKey]; ok {
-			if cached != "" {
-				segments = append([]string{cached}, segments...)
-			}
+			prefix = cached
 			break
 		}
 
@@ -140,14 +137,26 @@ func (l *AdminFileListLogic) buildDirectoryPath(userIdentity string, parentID in
 			break
 		}
 
-		name := strings.TrimSpace(node.Name)
-		if name != "" {
-			segments = append([]string{name}, segments...)
-			cache[cacheKey] = name
-		} else {
-			cache[cacheKey] = ""
-		}
+		lineage = append(lineage, folderNode{
+			Id:       node.Id,
+			ParentId: node.ParentId,
+			Name:     strings.TrimSpace(node.Name),
+		})
 		currentID = node.ParentId
+	}
+
+	segments := make([]string, 0, len(lineage)+4)
+	if prefix != "" {
+		segments = append(segments, strings.Split(prefix, "/")...)
+	}
+
+	for i := len(lineage) - 1; i >= 0; i-- {
+		node := lineage[i]
+		if node.Name != "" {
+			segments = append(segments, node.Name)
+		}
+		cacheKey := fmt.Sprintf("%s:%d", userIdentity, node.Id)
+		cache[cacheKey] = strings.Join(segments, "/")
 	}
 
 	if len(segments) == 0 {

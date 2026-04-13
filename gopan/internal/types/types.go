@@ -116,9 +116,12 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
-	Role         int    `json:"role"`
+	Token              string `json:"token"`
+	RefreshToken       string `json:"refresh_token"`
+	Role               int    `json:"role"`
+	UploadPermission   int    `json:"upload_permission"`
+	DownloadPermission int    `json:"download_permission"`
+	SharePermission    int    `json:"share_permission"`
 }
 
 type RegisterRequest struct {
@@ -176,8 +179,11 @@ type UserDetailRequest struct {
 }
 
 type UserDetailResponse struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name               string `json:"name"`
+	Email              string `json:"email"`
+	UploadPermission   int    `json:"upload_permission"`
+	DownloadPermission int    `json:"download_permission"`
+	SharePermission    int    `json:"share_permission"`
 }
 
 type UserFile struct {

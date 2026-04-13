@@ -14,7 +14,13 @@ export function adminUserListApi(params: { page: number; size: number; keyword: 
   return http.get<never, AdminUserListResponse>('/admin/users', { params });
 }
 
-export function adminUserStatusUpdateApi(payload: { identity: string; status: number }) {
+export function adminUserStatusUpdateApi(payload: {
+  identity: string;
+  status?: number;
+  upload_permission?: number;
+  download_permission?: number;
+  share_permission?: number;
+}) {
   return http.put('/admin/user/status', payload);
 }
 

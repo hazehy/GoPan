@@ -28,7 +28,11 @@ func NewFileChunkUploadCompleteLogic(ctx context.Context, svcCtx *svc.ServiceCon
 	}
 }
 
-func (l *FileChunkUploadCompleteLogic) FileChunkUploadComplete(req *types.FileChunkUploadCompleteRequest) (resp *types.FileChunkUploadCompleteResponse, err error) {
+func (l *FileChunkUploadCompleteLogic) FileChunkUploadComplete(req *types.FileChunkUploadCompleteRequest, userIdentity string) (resp *types.FileChunkUploadCompleteResponse, err error) {
+	if err := ensureUserCanUpload(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	parts := make([]cos.Object, 0)
 	for _, part := range req.CosObjects {
 		parts = append(parts, cos.Object{

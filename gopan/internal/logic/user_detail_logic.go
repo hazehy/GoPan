@@ -40,5 +40,8 @@ func (l *UserDetailLogic) UserDetail(req *types.UserDetailRequest) (resp *types.
 	}
 	resp.Name = ud.Name
 	resp.Email = ud.Email
+	resp.UploadPermission = ud.UploadPermission
+	resp.DownloadPermission = ud.DownloadPermission
+	resp.SharePermission = ud.SharePermission
 	return
 }

@@ -20,10 +20,6 @@ func AdminUserListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 		l := logic.NewAdminUserListLogic(r.Context(), svcCtx)
 		resp, err := l.AdminUserList(&req)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
-		}
+		writeLogicJSON(r.Context(), w, resp, err)
 	}
 }

@@ -6,10 +6,11 @@ package handler
 import (
 	"net/http"
 
-	"github.com/zeromicro/go-zero/rest/httpx"
 	"gopan/gopan/internal/logic"
 	"gopan/gopan/internal/svc"
 	"gopan/gopan/internal/types"
+
+	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func FileChunkUploadCompleteHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
@@ -21,7 +22,7 @@ func FileChunkUploadCompleteHandler(svcCtx *svc.ServiceContext) http.HandlerFunc
 		}
 
 		l := logic.NewFileChunkUploadCompleteLogic(r.Context(), svcCtx)
-		resp, err := l.FileChunkUploadComplete(&req)
+		resp, err := l.FileChunkUploadComplete(&req, requestUserIdentity(r))
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

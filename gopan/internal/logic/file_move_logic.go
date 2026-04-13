@@ -29,7 +29,6 @@ func NewFileMoveLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FileMove
 }
 
 func (l *FileMoveLogic) FileMove(req *types.FileMoveRequest, userIdentity string) (resp *types.FileMoveResponse, err error) {
-	// TODO:父级文件夹下的同名查询以及同文件查询
 	pData := new(models.UserRepository)
 	has, err := l.svcCtx.Engine.Where("identity = ? AND user_identity = ?", req.ParentIdentity, userIdentity).Get(pData)
 	if err != nil {

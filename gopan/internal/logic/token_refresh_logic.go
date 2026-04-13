@@ -5,11 +5,13 @@ package logic
 
 import (
 	"context"
+	"errors"
 
 	"gopan/gopan/define"
 	"gopan/gopan/helper"
 	"gopan/gopan/internal/svc"
 	"gopan/gopan/internal/types"
+	"gopan/gopan/models"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -45,5 +47,17 @@ func (l *TokenRefreshLogic) TokenRefresh(req *types.LoginRequest, authorization 
 	resp.Token = token
 	resp.RefreshToken = refreshtoken
 	resp.Role = uc.Role
+
+	user := new(models.User)
+	has, dbErr := l.svcCtx.Engine.Where("identity = ? AND deleted_at IS NULL", uc.Identity).Get(user)
+	if dbErr != nil {
+		return nil, dbErr
+	}
+	if !has {
+		return nil, errors.New("用户不存在")
+	}
+	resp.UploadPermission = user.UploadPermission
+	resp.DownloadPermission = user.DownloadPermission
+	resp.SharePermission = user.SharePermission
 	return
 }

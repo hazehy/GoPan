@@ -119,9 +119,11 @@ ensure_compose() {
 start_stack() {
   log "Starting GoPan stack"
   if docker compose version >/dev/null 2>&1; then
-    docker compose up -d --build
+    docker compose build --progress=plain
+    docker compose up -d
   else
-    docker-compose up -d --build
+    docker-compose build
+    docker-compose up -d
   fi
 }
 

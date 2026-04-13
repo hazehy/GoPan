@@ -22,11 +22,13 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	engine := models.Init(c.Mysql.Database)
+
 	return &ServiceContext{
 		Config: c,
-		Engine: models.Init(c.Mysql.Database),
+		Engine: engine,
 		RDB:    models.InitRedis(c),
-		Auth:   middleware.NewAuthMiddleware().Handle,
+		Auth:   middleware.NewAuthMiddleware(engine).Handle,
 		Admin:  middleware.NewAdminMiddleware().Handle,
 	}
 }

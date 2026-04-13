@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// TODO: 密码
 type ShareLink struct {
 	Id                 int
 	Identity           string

@@ -29,6 +29,11 @@ func NewAdminUserStatusUpdateLogic(ctx context.Context, svcCtx *svc.ServiceConte
 }
 
 func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserStatusUpdateRequest) error {
+	req.Identity = helper.NormalizeInput(req.Identity)
+	if req.Identity == "" {
+		return errors.New("用户标识不能为空")
+	}
+
 	if req.Status == nil && req.UploadPermission == nil && req.DownloadPermission == nil && req.SharePermission == nil {
 		return errors.New("至少需要更新一个字段")
 	}
@@ -47,7 +52,7 @@ func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserS
 	}
 
 	target := new(models.User)
-	has, err := l.svcCtx.Engine.Where("identity = ?", req.Identity).Get(target)
+	has, err := l.svcCtx.Engine.Where("identity = ? AND deleted_at IS NULL", req.Identity).Get(target)
 	if err != nil {
 		return err
 	}
@@ -61,23 +66,36 @@ func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserS
 	updated := &models.User{}
 	cols := make([]string, 0, 4)
 	auditParts := make([]string, 0, 4)
+	hasActualChange := false
 
 	if req.Status != nil {
+		if target.Status != *req.Status {
+			hasActualChange = true
+		}
 		updated.Status = *req.Status
 		cols = append(cols, "status")
 		auditParts = append(auditParts, fmt.Sprintf("status=%d", *req.Status))
 	}
 	if req.UploadPermission != nil {
+		if target.UploadPermission != *req.UploadPermission {
+			hasActualChange = true
+		}
 		updated.UploadPermission = *req.UploadPermission
 		cols = append(cols, "upload_permission")
 		auditParts = append(auditParts, fmt.Sprintf("upload_permission=%d", *req.UploadPermission))
 	}
 	if req.DownloadPermission != nil {
+		if target.DownloadPermission != *req.DownloadPermission {
+			hasActualChange = true
+		}
 		updated.DownloadPermission = *req.DownloadPermission
 		cols = append(cols, "download_permission")
 		auditParts = append(auditParts, fmt.Sprintf("download_permission=%d", *req.DownloadPermission))
 	}
 	if req.SharePermission != nil {
+		if target.SharePermission != *req.SharePermission {
+			hasActualChange = true
+		}
 		updated.SharePermission = *req.SharePermission
 		cols = append(cols, "share_permission")
 		auditParts = append(auditParts, fmt.Sprintf("share_permission=%d", *req.SharePermission))
@@ -86,10 +104,18 @@ func (l *AdminUserStatusUpdateLogic) AdminUserStatusUpdate(req *types.AdminUserS
 	if len(cols) == 0 {
 		return errors.New("没有有效的更新字段")
 	}
-
-	_, err = l.svcCtx.Engine.Where("identity = ?", req.Identity).Cols(cols...).Update(updated)
-	if err == nil {
-		helper.AddAuditLog(l.svcCtx.Engine, "SYSTEM", "admin", 2, "USER_STATUS_UPDATE", "user", target.Identity, "管理员更新用户状态与权限: "+strings.Join(auditParts, ";"))
+	if !hasActualChange {
+		return nil
 	}
-	return err
+
+	affected, err := l.svcCtx.Engine.Where("identity = ? AND deleted_at IS NULL", req.Identity).Cols(cols...).Update(updated)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("未更新到任何用户记录")
+	}
+
+	helper.AddAuditLog(l.svcCtx.Engine, "SYSTEM", "admin", 2, "USER_STATUS_UPDATE", "user", target.Identity, "管理员更新用户状态与权限: "+strings.Join(auditParts, ";"))
+	return nil
 }

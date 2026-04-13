@@ -245,7 +245,7 @@ export function useAdminDashboard() {
     }
   }
 
-  async function toggleUserStatus(identity: string, currentStatus: number) {
+  async function updateUserStatus(identity: string, status: number) {
     if (userStatusLoading.value) {
       return;
     }
@@ -253,7 +253,7 @@ export function useAdminDashboard() {
     try {
       await adminUserStatusUpdateApi({
         identity,
-        status: currentStatus === 1 ? 2 : 1,
+        status,
       });
       await Promise.all([loadUsers(), loadOverview()]);
     } catch (error) {
@@ -263,10 +263,10 @@ export function useAdminDashboard() {
     }
   }
 
-  async function toggleUserPermission(
+  async function updateUserPermission(
     identity: string,
     field: 'upload_permission' | 'download_permission' | 'share_permission',
-    currentValue: number,
+    value: number,
   ) {
     if (userStatusLoading.value) {
       return;
@@ -275,7 +275,7 @@ export function useAdminDashboard() {
     try {
       await adminUserStatusUpdateApi({
         identity,
-        [field]: currentValue === 1 ? 2 : 1,
+        [field]: value,
       });
       await loadUsers();
     } catch (error) {
@@ -374,8 +374,8 @@ export function useAdminDashboard() {
     extPieGradient,
     switchLogSubPage,
     resetLogFilters,
-    toggleUserStatus,
-    toggleUserPermission,
+    updateUserStatus,
+    updateUserPermission,
     deleteFile,
     reloadUsers,
     reloadFiles,

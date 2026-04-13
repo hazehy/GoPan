@@ -17,7 +17,6 @@
         <col class="admin-col-user-status" />
         <col class="admin-col-user-status" />
         <col class="admin-col-user-login" />
-        <col class="admin-col-user-action" />
       </colgroup>
       <thead>
         <tr>
@@ -29,7 +28,6 @@
           <th>下载权限</th>
           <th>分享权限</th>
           <th>最近登录</th>
-          <th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -37,47 +35,54 @@
           <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.name" :title="user.name">{{ user.name }}</span></td>
           <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.email" :title="user.email">{{ user.email }}</span></td>
           <td>{{ user.role === 2 ? '管理员' : '普通用户' }}</td>
-          <td>{{ user.status === 1 ? '正常' : '禁用' }}</td>
           <td>
-            <button
-              class="btn btn-secondary"
+            <select
+              class="input admin-compact-select"
               :disabled="user.role === 2 || props.userStatusLoading"
-              @click="props.toggleUserPermission(user.identity, 'upload_permission', user.upload_permission)"
+              :value="String(user.status)"
+              @change="onStatusChange($event, user.identity, user.status)"
             >
-              {{ user.upload_permission === 1 ? '允许' : '禁止' }}
-            </button>
+              <option value="1">正常</option>
+              <option value="2">禁用</option>
+            </select>
           </td>
           <td>
-            <button
-              class="btn btn-secondary"
+            <select
+              class="input admin-compact-select"
               :disabled="user.role === 2 || props.userStatusLoading"
-              @click="props.toggleUserPermission(user.identity, 'download_permission', user.download_permission)"
+              :value="String(user.upload_permission)"
+              @change="onPermissionChange($event, user.identity, 'upload_permission', user.upload_permission)"
             >
-              {{ user.download_permission === 1 ? '允许' : '禁止' }}
-            </button>
+              <option value="1">允许</option>
+              <option value="2">禁止</option>
+            </select>
           </td>
           <td>
-            <button
-              class="btn btn-secondary"
+            <select
+              class="input admin-compact-select"
               :disabled="user.role === 2 || props.userStatusLoading"
-              @click="props.toggleUserPermission(user.identity, 'share_permission', user.share_permission)"
+              :value="String(user.download_permission)"
+              @change="onPermissionChange($event, user.identity, 'download_permission', user.download_permission)"
             >
-              {{ user.share_permission === 1 ? '允许' : '禁止' }}
-            </button>
+              <option value="1">允许</option>
+              <option value="2">禁止</option>
+            </select>
+          </td>
+          <td>
+            <select
+              class="input admin-compact-select"
+              :disabled="user.role === 2 || props.userStatusLoading"
+              :value="String(user.share_permission)"
+              @change="onPermissionChange($event, user.identity, 'share_permission', user.share_permission)"
+            >
+              <option value="1">允许</option>
+              <option value="2">禁止</option>
+            </select>
           </td>
           <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(user.last_login_at)" :title="props.formatText(user.last_login_at)">{{ props.formatDateTime(user.last_login_at) }}</span></td>
-          <td>
-            <button
-              class="btn btn-secondary"
-              :disabled="user.role === 2 || props.userStatusLoading"
-              @click="props.toggleUserStatus(user.identity, user.status)"
-            >
-              {{ user.status === 1 ? '禁用' : '启用' }}
-            </button>
-          </td>
         </tr>
         <tr v-if="!props.users.length">
-          <td colspan="9" class="muted">暂无用户数据</td>
+          <td colspan="8" class="muted">暂无用户数据</td>
         </tr>
       </tbody>
     </table>
@@ -101,11 +106,11 @@ interface Props {
   userStatusLoading: boolean;
   reloadUsers: () => void;
   changeUserPage: (nextPage: number) => void;
-  toggleUserStatus: (identity: string, currentStatus: number) => void;
-  toggleUserPermission: (
+  updateUserStatus: (identity: string, status: number) => void;
+  updateUserPermission: (
     identity: string,
     field: 'upload_permission' | 'download_permission' | 'share_permission',
-    currentValue: number,
+    value: number,
   ) => void;
   formatText: (value: string) => string;
   formatDateTime: (value: string) => string;
@@ -116,5 +121,26 @@ const emit = defineEmits<{ "update:userKeyword": [value: string] }>();
 
 function onKeywordInput(event: Event) {
   emit("update:userKeyword", (event.target as HTMLInputElement).value.trim());
+}
+
+function onStatusChange(event: Event, identity: string, currentStatus: number) {
+  const selected = Number((event.target as HTMLSelectElement).value);
+  if (selected === currentStatus) {
+    return;
+  }
+  props.updateUserStatus(identity, selected);
+}
+
+function onPermissionChange(
+  event: Event,
+  identity: string,
+  field: 'upload_permission' | 'download_permission' | 'share_permission',
+  currentValue: number,
+) {
+  const selected = Number((event.target as HTMLSelectElement).value);
+  if (selected === currentValue) {
+    return;
+  }
+  props.updateUserPermission(identity, field, selected);
 }
 </script>

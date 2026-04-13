@@ -32,6 +32,10 @@ func NewResourceSaveLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Reso
 }
 
 func (l *ResourceSaveLogic) ResourceSave(req *types.ResourceSaveRequest, userIdentity string) (resp *types.ResourceSaveResponse, err error) {
+	if err := ensureUserCanUpload(l.svcCtx, userIdentity); err != nil {
+		return nil, err
+	}
+
 	rp := new(models.RepositoryPool)
 	has, err := l.svcCtx.Engine.Where("identity = ?", req.RepositoryIdentity).Get(rp)
 	if err != nil {

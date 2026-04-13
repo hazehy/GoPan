@@ -83,6 +83,13 @@ a:hover {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+.admin-compact-select {
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
 .btn {
   border: 1px solid transparent;
   border-radius: 8px;
@@ -1167,23 +1174,23 @@ a:hover {
 }
 
 .admin-col-user-name {
-  width: 16%;
+  width: 8%;
 }
 
 .admin-col-user-email {
-  width: 24%;
+  width: 22%;
 }
 
 .admin-col-user-role {
-  width: 12%;
-}
-
-.admin-col-user-status {
   width: 10%;
 }
 
+.admin-col-user-status {
+  width: 8%;
+}
+
 .admin-col-user-login {
-  width: 26%;
+  width: 21%;
 }
 
 .admin-col-user-action {

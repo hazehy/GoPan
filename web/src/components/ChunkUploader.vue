@@ -451,7 +451,6 @@ function onFileSelect(event: Event) {
 
   if (validFiles.length > 0) {
     uploadQueueStore.enqueueFiles(validFiles, selectedUploadParentId.value);
-    activeTab.value = "queue";
   }
 
   target.value = "";

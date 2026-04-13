@@ -52,6 +52,13 @@
           placeholder="密码"
           required
         />
+        <input
+          class="input"
+          v-model="form.confirmPassword"
+          type="password"
+          placeholder="确认密码"
+          required
+        />
         <button class="btn btn-primary" type="submit" :disabled="loading">
           {{ loading ? "提交中..." : "注册" }}
         </button>
@@ -87,6 +94,7 @@ const form = reactive({
   email: "",
   code: "",
   password: "",
+  confirmPassword: "",
 });
 
 const loading = ref(false);
@@ -173,12 +181,17 @@ async function onSubmit() {
     showValidationError(passwordError);
     return;
   }
+  if (form.password !== form.confirmPassword) {
+    showValidationError("两次输入的密码不一致");
+    return;
+  }
 
   try {
     lastSubmitAt.value = now;
     loading.value = true;
     errorMessage.value = "";
     await registerApi(form);
+    form.confirmPassword = "";
     await router.replace("/login");
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error);

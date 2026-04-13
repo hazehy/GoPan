@@ -31,8 +31,6 @@ func (l *ResourceInfoLogic) ResourceInfo(req *types.ResourceInfoRequest) (resp *
 	if req.Identity == "" {
 		return nil, errors.New("分享标识不能为空")
 	}
-
-	// TODO: 资源不存在的错误处理
 	_, err = l.svcCtx.Engine.Exec("UPDATE share_link SET click_num = click_num + 1 WHERE identity = ?", req.Identity)
 	if err != nil {
 		return nil, err

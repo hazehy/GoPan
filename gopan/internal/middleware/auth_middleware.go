@@ -4,16 +4,21 @@
 package middleware
 
 import (
+	"errors"
 	"gopan/gopan/helper"
+	"gopan/gopan/models"
 	"net/http"
 	"strconv"
+
+	"xorm.io/xorm"
 )
 
 type AuthMiddleware struct {
+	engine *xorm.Engine
 }
 
-func NewAuthMiddleware() *AuthMiddleware {
-	return &AuthMiddleware{}
+func NewAuthMiddleware(engine *xorm.Engine) *AuthMiddleware {
+	return &AuthMiddleware{engine: engine}
 }
 
 func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
@@ -31,10 +36,37 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			w.Write([]byte(err.Error()))
 			return
 		}
+
+		if err := m.ensureUserAvailable(uc.Identity); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		r.Header.Set("UserId", string(rune(uc.Id)))
 		r.Header.Set("UserIdentity", uc.Identity)
 		r.Header.Set("UserName", uc.Name)
 		r.Header.Set("UserRole", strconv.Itoa(uc.Role))
 		next(w, r)
 	}
+}
+
+func (m *AuthMiddleware) ensureUserAvailable(identity string) error {
+	if m.engine == nil {
+		return errors.New("服务未就绪")
+	}
+
+	user := new(models.User)
+	has, err := m.engine.Where("identity = ?", identity).Get(user)
+	if err != nil {
+		return errors.New("用户状态校验失败")
+	}
+	if !has || !user.DeletedAt.IsZero() {
+		return errors.New("用户不存在")
+	}
+	if user.Status != 1 {
+		return errors.New("用户已被禁用")
+	}
+
+	return nil
 }

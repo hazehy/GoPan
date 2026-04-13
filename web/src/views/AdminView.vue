@@ -58,8 +58,8 @@
           :user-status-loading="userStatusLoading"
           :reload-users="reloadUsers"
           :change-user-page="changeUserPage"
-          :toggle-user-status="toggleUserStatus"
-          :toggle-user-permission="toggleUserPermission"
+          :update-user-status="updateUserStatus"
+          :update-user-permission="updateUserPermission"
           :format-text="formatText"
           :format-date-time="formatDateTime"
           @update:userKeyword="userKeyword = $event"
@@ -169,8 +169,8 @@ const {
   extPieGradient,
   switchLogSubPage,
   resetLogFilters,
-  toggleUserStatus,
-  toggleUserPermission,
+  updateUserStatus,
+  updateUserPermission,
   deleteFile,
   reloadUsers,
   reloadFiles,

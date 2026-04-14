@@ -154,8 +154,8 @@ build_with_retry() {
     fi
   else
     log "Building images (docker-compose v1 mode)"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker-compose build backend && \
-       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker-compose build frontend; then
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker-compose build backend && \
+       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker-compose build frontend; then
       return
     fi
 

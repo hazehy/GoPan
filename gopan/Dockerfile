@@ -9,7 +9,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY gopan ./gopan
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/gopan ./gopan
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOMAXPROCS=1 \
+    go build -v -p=1 -buildvcs=false -o /out/gopan ./gopan
 
 FROM alpine:3.21
 

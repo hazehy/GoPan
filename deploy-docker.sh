@@ -131,28 +131,31 @@ build_with_retry() {
   }
 
   if docker compose version >/dev/null 2>&1; then
-    log "Building images (BuildKit default mode)"
+    log "Building backend (safe mode: non-BuildKit, serialized)"
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker compose build backend && \
+       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker compose build frontend; then
+      return
+    fi
+
+    warn "Safe mode failed. Retrying with BuildKit serialized mode"
+    if COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build backend && \
+       COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build frontend; then
+      return
+    fi
+
+    warn "Retrying full compose build as a final attempt"
     if run_build docker compose --progress=plain build; then
-      return
-    fi
-
-    warn "Build failed. Retrying with serialized build to reduce pressure"
-    if COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build; then
-      return
-    fi
-
-    warn "Build still failed. Retrying with legacy builder compatibility mode"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 run_build docker compose build; then
       return
     fi
   else
     log "Building images (docker-compose v1 mode)"
-    if run_build docker-compose build; then
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker-compose build backend && \
+       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker-compose build frontend; then
       return
     fi
 
-    warn "Build failed. Retrying with BuildKit disabled"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 run_build docker-compose build; then
+    warn "Safe mode failed. Retrying full docker-compose build"
+    if run_build docker-compose build; then
       return
     fi
   fi

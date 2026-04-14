@@ -120,30 +120,39 @@ build_with_retry() {
   # Extend API timeouts for slow/unstable servers.
   export DOCKER_CLIENT_TIMEOUT="${DOCKER_CLIENT_TIMEOUT:-600}"
   export COMPOSE_HTTP_TIMEOUT="${COMPOSE_HTTP_TIMEOUT:-600}"
+  local build_timeout="${BUILD_TIMEOUT_SECONDS:-1800}"
+
+  run_build() {
+    if have_cmd timeout; then
+      timeout --foreground "${build_timeout}s" "$@"
+    else
+      "$@"
+    fi
+  }
 
   if docker compose version >/dev/null 2>&1; then
     log "Building images (BuildKit default mode)"
-    if docker compose --progress=plain build; then
+    if run_build docker compose --progress=plain build; then
       return
     fi
 
     warn "Build failed. Retrying with serialized build to reduce pressure"
-    if COMPOSE_PARALLEL_LIMIT=1 docker compose --progress=plain build; then
+    if COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build; then
       return
     fi
 
     warn "Build still failed. Retrying with legacy builder compatibility mode"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose build; then
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 run_build docker compose build; then
       return
     fi
   else
     log "Building images (docker-compose v1 mode)"
-    if docker-compose build; then
+    if run_build docker-compose build; then
       return
     fi
 
     warn "Build failed. Retrying with BuildKit disabled"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker-compose build; then
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 run_build docker-compose build; then
       return
     fi
   fi

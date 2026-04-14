@@ -1,4 +1,5 @@
 import http from '@/api/http';
+import type { AxiosProgressEvent } from 'axios';
 import type {
   FileChunkUploadResponse,
   FileDownloadResponse,
@@ -44,9 +45,18 @@ export function filePreUploadApi(payload: { md5: string; name: string; ext: stri
   return http.post<never, FilePreUploadResponse>('/file/preupload', payload);
 }
 
-export function fileChunkUploadApi(formData: FormData, signal?: AbortSignal) {
+export function fileChunkUploadApi(
+  formData: FormData,
+  options?: {
+    signal?: AbortSignal;
+    onUploadProgress?: (loaded: number, total?: number) => void;
+  },
+) {
   return http.post<never, FileChunkUploadResponse>('/file/chunkupload', formData, {
-    signal,
+    signal: options?.signal,
+    onUploadProgress: (event: AxiosProgressEvent) => {
+      options?.onUploadProgress?.(event.loaded, event.total);
+    },
   });
 }
 

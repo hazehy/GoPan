@@ -489,6 +489,7 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
           const start = (partNumber - 1) * CHUNK_SIZE;
           const end = Math.min(file.size, start + CHUNK_SIZE);
           const chunk = file.slice(start, end);
+          const chunkSize = end - start;
 
           const formData = new FormData();
           formData.append("file", chunk, file.name);
@@ -496,7 +497,31 @@ export const useUploadQueueStore = defineStore("uploadQueue", {
           formData.append("upload_id", uploadId);
           formData.append("part_number", String(partNumber));
 
-          const chunkResp = await fileChunkUploadApi(formData, controller.signal);
+          const chunkResp = await fileChunkUploadApi(formData, {
+            signal: controller.signal,
+            onUploadProgress: (loaded, total) => {
+              if (task.status !== "uploading") {
+                return;
+              }
+
+              const totalBytes = total && total > 0 ? total : chunkSize;
+              const loadedBytes = Math.max(0, Math.min(totalBytes, loaded));
+              task.uploadedBytes = Math.min(task.size, start + loadedBytes);
+              task.progress = Math.min(
+                100,
+                Math.round((task.uploadedBytes / task.size) * 100),
+              );
+
+              const elapsedSeconds = (Date.now() - runtime.speedStartAt) / 1000;
+              const sessionUploadedBytes =
+                task.uploadedBytes - runtime.speedBaseUploadedBytes;
+              task.speedBytesPerSec =
+                elapsedSeconds > 0
+                  ? Math.max(0, sessionUploadedBytes) / elapsedSeconds
+                  : 0;
+              task.updatedAt = Date.now();
+            },
+          });
 
           const existingPartIndex = task.uploadParts.findIndex(
             (item) => item.part_number === partNumber,

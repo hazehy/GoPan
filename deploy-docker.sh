@@ -27,24 +27,24 @@ run_root() {
   elif have_cmd sudo; then
     sudo "$@"
   else
-    die "Need root privileges. Re-run as root or install sudo."
+    die "需要 root 权限，请使用 root 运行或先安装 sudo。"
   fi
 }
 
 ensure_env_file() {
   if [ ! -f .env ]; then
     if [ -f .env.example ]; then
-      log "Creating .env from .env.example"
+      log "未检测到 .env，正在从 .env.example 创建"
       cp .env.example .env
-      warn "Edit .env before deploying, especially passwords and tokens."
+      warn "部署前请先编辑 .env，重点修改密码和令牌等敏感配置。"
     else
-      die ".env.example not found"
+      die "未找到 .env.example"
     fi
   fi
 }
 
 install_docker_ubuntu() {
-  log "Installing Docker Engine for Debian/Ubuntu"
+  log "正在为 Debian/Ubuntu 安装 Docker Engine"
   run_root apt-get update
   run_root apt-get install -y ca-certificates curl gnupg
   run_root install -m 0755 -d /etc/apt/keyrings
@@ -58,7 +58,7 @@ install_docker_ubuntu() {
 }
 
 install_docker_rhel() {
-  log "Installing Docker Engine for RHEL/CentOS/Rocky/AlmaLinux"
+  log "正在为 RHEL/CentOS/Rocky/AlmaLinux 安装 Docker Engine"
   if have_cmd dnf; then
     run_root dnf -y install dnf-plugins-core
     run_root dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -70,19 +70,19 @@ install_docker_rhel() {
     run_root yum -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     run_root systemctl enable --now docker
   else
-    die "No supported package manager found for Docker installation"
+    die "未找到可用的软件包管理器，无法安装 Docker"
   fi
 }
 
 install_docker_fallback() {
-  warn "Falling back to the official Docker install script"
+  warn "将使用 Docker 官方安装脚本作为兜底方案"
   curl -fsSL https://get.docker.com | sh
   run_root systemctl enable --now docker
 }
 
 ensure_docker() {
   if have_cmd docker; then
-    log "Docker already installed"
+    log "Docker 已安装"
     return
   fi
 
@@ -115,7 +115,7 @@ ensure_compose() {
     return
   fi
 
-  die "Docker Compose is not available"
+  die "未检测到 Docker Compose"
 }
 
 compose() {
@@ -128,9 +128,9 @@ compose() {
 
 log_compose_impl() {
   if [ "${COMPOSE_IMPL:-}" = "v2" ]; then
-    log "Using Docker Compose v2 (docker compose)"
+    log "当前使用 Docker Compose v2 (docker compose)"
   else
-    warn "Using Docker Compose v1 (docker-compose). Consider upgrading to v2 for better compatibility."
+    warn "当前使用 Docker Compose v1 (docker-compose)，建议升级到 v2 以获得更好兼容性。"
   fi
 }
 
@@ -166,7 +166,7 @@ build_with_retry() {
   build_target_serialized() {
     local target
     for target in "${BUILD_TARGETS[@]}"; do
-      log "Building ${target}"
+      log "正在构建 ${target}"
       if ! DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build compose build "$target"; then
         return 1
       fi
@@ -178,12 +178,12 @@ build_with_retry() {
     return
   fi
 
-  warn "Safe mode failed. Retrying with standard compose build"
+  warn "安全模式构建失败，正在回退到标准 compose 构建"
   if run_build compose build "${BUILD_TARGETS[@]}"; then
     return
   fi
 
-  die "Image build failed after retries"
+  die "镜像构建重试后仍失败"
 }
 
 up_stack() {
@@ -195,36 +195,36 @@ up_stack() {
 }
 
 deploy_all() {
-  log "Deploying all services"
+  log "正在执行全量部署"
   build_with_retry backend frontend
   up_stack
   maybe_bootstrap_default_admin
 }
 
 rebuild_frontend() {
-  log "Rebuilding frontend service"
+  log "正在重建前端服务"
   build_with_retry frontend
   compose up -d --no-deps --force-recreate frontend
 }
 
 rebuild_backend() {
-  log "Rebuilding backend service"
+  log "正在重建后端服务"
   build_with_retry backend
   compose up -d --no-deps --force-recreate backend
 }
 
 start_existing_stack() {
-  log "Starting existing stack without rebuild"
+  log "正在启动现有服务（不重建）"
   compose up -d --no-build
 }
 
 stop_stack() {
-  log "Stopping stack"
+  log "正在停止服务栈"
   compose down
 }
 
 restart_stack() {
-  log "Restarting running services"
+  log "正在重启运行中的服务"
   compose restart
 }
 
@@ -242,7 +242,7 @@ show_logs() {
 }
 
 cleanup_dangling_images() {
-  log "Cleaning dangling images"
+  log "正在清理悬空镜像"
   docker image prune -f
 }
 
@@ -252,7 +252,7 @@ current_git_branch() {
 
 update_from_git() {
   if ! have_cmd git; then
-    die "git is required for update action"
+    die "执行更新操作需要先安装 git"
   fi
 
   local branch="${1:-}"
@@ -260,10 +260,10 @@ update_from_git() {
     branch="$(current_git_branch)"
   fi
   if [ -z "$branch" ]; then
-    die "Unable to detect git branch"
+    die "无法识别当前 Git 分支"
   fi
 
-  log "Updating repository from origin/${branch}"
+  log "正在从 origin/${branch} 更新仓库"
   git fetch origin "$branch"
   git pull --rebase origin "$branch"
 }
@@ -272,7 +272,7 @@ insert_default_admin_user() {
   local mysql_container="gopan-mysql"
 
   if ! docker ps --format '{{.Names}}' | grep -qx "$mysql_container"; then
-    warn "MySQL container '$mysql_container' is not running, skip admin bootstrap"
+    warn "MySQL 容器 '$mysql_container' 未运行，跳过默认管理员初始化"
     return
   fi
 
@@ -280,12 +280,12 @@ insert_default_admin_user() {
   exists="$(docker exec "$mysql_container" sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -N -B -e "SELECT COUNT(*) FROM user_basic WHERE name=\"admin\" OR email=\"admin@linux.com\";"' 2>/dev/null || true)"
 
   if [ -z "$exists" ]; then
-    warn "Unable to check existing admin user, skip admin bootstrap"
+    warn "无法检查管理员是否已存在，跳过默认管理员初始化"
     return
   fi
 
   if [ "$exists" != "0" ]; then
-    warn "User 'admin' or email 'admin@linux.com' already exists, skip admin bootstrap"
+    warn "admin 用户或 admin@linux.com 邮箱已存在，跳过默认管理员初始化"
     return
   fi
 
@@ -296,27 +296,27 @@ VALUES
   (UUID(), 'admin', '$2a$10$N/FJ.Oyey.ak/vxkmdVlXOhpRejoyvaWtd.IDAs6spu735/5tN.Va', 'admin@linux.com', 1, 2, 1, 1, 1, NOW(), NOW());
 SQL
   then
-    log "Default admin created: name=admin, email=admin@linux.com, password=123456"
-    warn "Please change the default admin password immediately after first login"
+    log "默认管理员创建成功：用户名 admin，邮箱 admin@linux.com，密码 123456"
+    warn "请在首次登录后立即修改默认管理员密码"
   else
-    warn "Failed to insert default admin user"
+    warn "默认管理员创建失败"
   fi
 }
 
 maybe_bootstrap_default_admin() {
   if [ ! -t 0 ]; then
-    log "Non-interactive shell detected, skip default admin prompt"
+    log "检测到非交互环境，跳过默认管理员询问"
     return
   fi
 
-  printf '[INFO] Create default admin user (admin/admin@linux.com, password 123456)? [y/N]: '
+  printf '[INFO] 是否创建默认管理员（admin/admin@linux.com，密码 123456）？[y/N]: '
   read -r answer
   case "$answer" in
     y|Y|yes|YES)
       insert_default_admin_user
       ;;
     *)
-      log "Skip default admin bootstrap"
+      log "已跳过默认管理员初始化"
       ;;
   esac
 }
@@ -324,27 +324,27 @@ maybe_bootstrap_default_admin() {
 print_menu() {
   cat <<'EOF'
 
-================ GoPan Deploy Menu ================
-1) Full deploy (build backend+frontend and up)
-2) Rebuild frontend only
-3) Rebuild backend only
-4) Start stack (no build)
-5) Restart stack
-6) Stop stack
-7) Show status
-8) Show logs
-9) Update from git and full deploy
-10) Create default admin user
-11) Clean dangling images
-0) Exit
-===================================================
+================ GoPan 部署菜单 ================
+1) 全量部署（重建后端+前端并启动）
+2) 仅重建前端
+3) 仅重建后端
+4) 启动服务（不重建）
+5) 重启服务
+6) 停止服务
+7) 查看状态
+8) 查看日志
+9) Git 更新并执行全量部署
+10) 创建默认管理员
+11) 清理悬空镜像
+0) 退出
+================================================
 EOF
 }
 
 interactive_menu() {
   while true; do
     print_menu
-    printf '[INFO] Select an option: '
+    printf '[INFO] 请选择操作编号: '
     read -r choice
 
     case "$choice" in
@@ -370,12 +370,12 @@ interactive_menu() {
         show_status
         ;;
       8)
-        printf '[INFO] Service name (backend/frontend/mysql/redis, empty=all): '
+        printf '[INFO] 请输入服务名（backend/frontend/mysql/redis，留空=全部）: '
         read -r service
         show_logs "$service"
         ;;
       9)
-        printf '[INFO] Branch name (empty=current): '
+        printf '[INFO] 请输入分支名（留空=当前分支）: '
         read -r branch
         update_from_git "$branch"
         deploy_all
@@ -387,11 +387,11 @@ interactive_menu() {
         cleanup_dangling_images
         ;;
       0)
-        log "Bye"
+        log "已退出"
         return
         ;;
       *)
-        warn "Invalid option: $choice"
+        warn "无效选项: $choice"
         ;;
     esac
   done
@@ -440,7 +440,7 @@ run_action() {
       interactive_menu
       ;;
     *)
-      die "Unknown action: $action"
+      die "未知操作: $action"
       ;;
   esac
 }

@@ -121,6 +121,11 @@ build_with_retry() {
   export DOCKER_CLIENT_TIMEOUT="${DOCKER_CLIENT_TIMEOUT:-600}"
   export COMPOSE_HTTP_TIMEOUT="${COMPOSE_HTTP_TIMEOUT:-600}"
   local build_timeout="${BUILD_TIMEOUT_SECONDS:-1800}"
+  local compose_parallel_limit="${COMPOSE_PARALLEL_LIMIT:-2}"
+
+  if [ "$compose_parallel_limit" -lt 2 ]; then
+    compose_parallel_limit=2
+  fi
 
   run_build() {
     if have_cmd timeout; then
@@ -132,14 +137,14 @@ build_with_retry() {
 
   if docker compose version >/dev/null 2>&1; then
     log "Building backend (safe mode: non-BuildKit, serialized)"
-    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker compose build backend && \
-       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT=1 run_build docker compose build frontend; then
+     if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker compose build backend && \
+       DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker compose build frontend; then
       return
     fi
 
     warn "Safe mode failed. Retrying with BuildKit serialized mode"
-    if COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build backend && \
-       COMPOSE_PARALLEL_LIMIT=1 run_build docker compose --progress=plain build frontend; then
+     if COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker compose --progress=plain build backend && \
+       COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build docker compose --progress=plain build frontend; then
       return
     fi
 

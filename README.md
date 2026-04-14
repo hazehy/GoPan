@@ -53,6 +53,8 @@ chmod +x deploy-docker.sh
 - 如果没有 `.env`，自动从 `.env.example` 生成
 - 使用 `docker compose up -d --build` 启动整套服务
 
+说明：Docker 构建前端时使用 `build:docker`（仅 `vite build`）以减少低配服务器上的构建耗时；本地开发和提交前检查仍建议使用 `npm run build`（含 `vue-tsc`）。
+
 部署前请先修改 `.env` 里的数据库密码和 `GOPAN_JWT_KEY`，以及 COS / SMTP 相关配置。
 
 ### 1. 初始化数据库

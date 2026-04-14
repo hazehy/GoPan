@@ -116,13 +116,48 @@ ensure_compose() {
   die "Docker Compose is not available"
 }
 
+build_with_retry() {
+  # Extend API timeouts for slow/unstable servers.
+  export DOCKER_CLIENT_TIMEOUT="${DOCKER_CLIENT_TIMEOUT:-600}"
+  export COMPOSE_HTTP_TIMEOUT="${COMPOSE_HTTP_TIMEOUT:-600}"
+
+  if docker compose version >/dev/null 2>&1; then
+    log "Building images (BuildKit default mode)"
+    if docker compose --progress=plain build; then
+      return
+    fi
+
+    warn "Build failed. Retrying with serialized build to reduce pressure"
+    if COMPOSE_PARALLEL_LIMIT=1 docker compose --progress=plain build; then
+      return
+    fi
+
+    warn "Build still failed. Retrying with legacy builder compatibility mode"
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose build; then
+      return
+    fi
+  else
+    log "Building images (docker-compose v1 mode)"
+    if docker-compose build; then
+      return
+    fi
+
+    warn "Build failed. Retrying with BuildKit disabled"
+    if DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker-compose build; then
+      return
+    fi
+  fi
+
+  die "Image build failed after retries"
+}
+
 start_stack() {
   log "Starting GoPan stack"
+  build_with_retry
+
   if docker compose version >/dev/null 2>&1; then
-    docker compose --progress=plain build
     docker compose up -d
   else
-    docker-compose build
     docker-compose up -d
   fi
 }

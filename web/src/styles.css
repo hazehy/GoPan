@@ -204,6 +204,7 @@ a:hover {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+  overscroll-behavior-x: contain;
   scrollbar-width: thin;
   padding-bottom: 6px;
 }
@@ -1186,6 +1187,7 @@ a:hover {
 .admin-table {
   table-layout: fixed;
   overflow: visible;
+  min-width: 980px;
 }
 
 .admin-table td {
@@ -1342,11 +1344,11 @@ a:hover {
 
 @media (max-width: 768px) {
   .file-table {
-    min-width: 820px;
+    min-width: 900px;
   }
 
   .admin-table {
-    min-width: 980px;
+    min-width: 1120px;
   }
 
   .uploader-panel-inner {
@@ -1359,6 +1361,12 @@ a:hover {
   }
 
   .card {
+    min-width: 0;
+  }
+
+  .admin-actions-inline,
+  .list-controls,
+  .toolbar {
     min-width: 0;
   }
 }

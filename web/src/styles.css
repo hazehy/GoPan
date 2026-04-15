@@ -249,6 +249,8 @@ a:hover {
 
 .file-table {
   table-layout: fixed;
+  min-width: 900px;
+  width: max-content;
 }
 
 .file-col-name {
@@ -1206,6 +1208,8 @@ a:hover {
 .admin-table {
   table-layout: fixed;
   overflow: visible;
+  min-width: 1120px;
+  width: max-content;
 }
 
 .admin-table td {

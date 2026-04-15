@@ -993,6 +993,11 @@ a:hover {
   padding: 14px;
 }
 
+.admin-sidebar.sidebar-drawer {
+  position: fixed;
+  top: 76px;
+}
+
 .admin-sidebar-title {
   margin: 0 0 10px;
   color: #1e3a8a;

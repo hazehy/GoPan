@@ -156,10 +156,18 @@ build_with_retry() {
   fi
 
   run_build() {
-    if have_cmd timeout; then
-      timeout --foreground "${build_timeout}s" "$@"
+    if [ "${COMPOSE_IMPL:-}" = "v2" ]; then
+      if have_cmd timeout; then
+        timeout --foreground "${build_timeout}s" docker compose "$@"
+      else
+        docker compose "$@"
+      fi
     else
-      "$@"
+      if have_cmd timeout; then
+        timeout --foreground "${build_timeout}s" docker-compose "$@"
+      else
+        docker-compose "$@"
+      fi
     fi
   }
 
@@ -167,7 +175,7 @@ build_with_retry() {
     local target
     for target in "${BUILD_TARGETS[@]}"; do
       log "正在构建 ${target}"
-      if ! DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build compose build "$target"; then
+      if ! DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 COMPOSE_PARALLEL_LIMIT="$compose_parallel_limit" run_build build "$target"; then
         return 1
       fi
     done
@@ -179,7 +187,7 @@ build_with_retry() {
   fi
 
   warn "安全模式构建失败，正在回退到标准 compose 构建"
-  if run_build compose build "${BUILD_TARGETS[@]}"; then
+  if run_build build "${BUILD_TARGETS[@]}"; then
     return
   fi
 

@@ -209,14 +209,13 @@ a:hover {
 }
 
 .table-scroll-content {
-  display: inline-block;
+  display: block;
   min-width: var(--scroll-min-width, 100%);
-  width: max-content;
 }
 
 .table-scroll-content > .table {
-  width: auto;
-  min-width: 100%;
+  width: var(--scroll-min-width, 100%);
+  min-width: var(--scroll-min-width, 100%);
 }
 
 .file-table-scroll-content {
@@ -1368,6 +1367,17 @@ a:hover {
 }
 
 @media (max-width: 768px) {
+  .table-scroll-content {
+    display: inline-block;
+    width: max-content;
+    min-width: var(--scroll-min-width, 100%);
+  }
+
+  .table-scroll-content > .table {
+    width: var(--scroll-min-width, 100%);
+    min-width: var(--scroll-min-width, 100%);
+  }
+
   .uploader-panel-inner {
     min-width: 760px;
   }

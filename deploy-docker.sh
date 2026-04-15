@@ -212,13 +212,28 @@ deploy_all() {
 rebuild_frontend() {
   log "正在重建前端服务"
   build_with_retry frontend
-  compose up -d --no-deps --force-recreate frontend
+  recreate_service frontend
 }
 
 rebuild_backend() {
   log "正在重建后端服务"
   build_with_retry backend
-  compose up -d --no-deps --force-recreate backend
+  recreate_service backend
+}
+
+recreate_service() {
+  local service="$1"
+
+  # docker-compose v1 在某些 Docker 版本上会在 force-recreate 阶段触发
+  # KeyError: 'ContainerConfig'，先删旧容器再 up 可规避该问题。
+  if [ "${COMPOSE_IMPL:-}" = "v1" ]; then
+    warn "检测到 Compose v1，采用兼容重建流程（先删除旧容器再启动）: ${service}"
+    compose rm -sf "$service" || true
+    compose up -d --no-deps "$service"
+    return
+  fi
+
+  compose up -d --no-deps --force-recreate "$service"
 }
 
 start_existing_stack() {

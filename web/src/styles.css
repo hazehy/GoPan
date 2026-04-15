@@ -418,9 +418,26 @@ a:hover {
   margin-bottom: 14px;
 }
 
+.page-header .page-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .page-header .btn {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.sidebar-toggle-btn {
+  gap: 8px;
+}
+
+.menu-icon {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .page-title {
@@ -939,6 +956,34 @@ a:hover {
   gap: 14px;
   align-items: flex-start;
   min-width: 0;
+}
+
+.sidebar-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.22);
+  z-index: 38;
+}
+
+.sidebar-drawer {
+  position: fixed;
+  left: 18px;
+  top: 76px;
+  width: 250px;
+  max-height: calc(100vh - 92px);
+  overflow-y: auto;
+  transform: translateX(calc(-100% - 28px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  z-index: 40;
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.16);
+}
+
+.sidebar-drawer-open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .admin-sidebar {

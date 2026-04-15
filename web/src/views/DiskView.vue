@@ -1,13 +1,14 @@
 <template>
   <div class="container admin-container">
     <div class="admin-layout disk-layout">
-      <aside class="card admin-sidebar disk-sidebar">
+      <div v-if="sidebarVisible" class="sidebar-drawer-backdrop" @click="closeSidebar"></div>
+      <aside class="card admin-sidebar disk-sidebar sidebar-drawer" :class="{ 'sidebar-drawer-open': sidebarVisible }">
         <h3 class="admin-sidebar-title">我的网盘</h3>
         <button
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeTab === 'files' }"
           type="button"
-          @click="activeTab = 'files'"
+          @click="selectTab('files')"
         >
           我的文件
         </button>
@@ -15,7 +16,7 @@
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeTab === 'upload' }"
           type="button"
-          @click="activeTab = 'upload'"
+          @click="selectTab('upload')"
         >
           文件上传
         </button>
@@ -23,6 +24,10 @@
 
       <section class="admin-main disk-main">
         <div class="page-header">
+          <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="切换左侧目录">
+            <span class="menu-icon" aria-hidden="true">☰</span>
+            <span>目录</span>
+          </button>
           <h2 class="page-title">{{ currentTitle }}</h2>
           <button class="btn btn-secondary" @click="logout">退出登录</button>
         </div>
@@ -89,10 +94,13 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import ChunkUploader from "@/components/ChunkUploader.vue";
 import DiskFilePanel from "@/components/disk/DiskFilePanel.vue";
 import DiskMoveDialog from "@/components/disk/DiskMoveDialog.vue";
 import { useDiskBrowser } from "@/composables/useDiskBrowser";
+
+const sidebarVisible = ref(false);
 
 const {
   page,
@@ -139,4 +147,17 @@ const {
   formatUpdatedAt,
   formatFileSize,
 } = useDiskBrowser();
+
+function closeSidebar() {
+  sidebarVisible.value = false;
+}
+
+function toggleSidebar() {
+  sidebarVisible.value = !sidebarVisible.value;
+}
+
+function selectTab(tab: typeof activeTab.value) {
+  activeTab.value = tab;
+  closeSidebar();
+}
 </script>

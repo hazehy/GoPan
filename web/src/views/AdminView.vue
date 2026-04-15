@@ -1,33 +1,38 @@
 <template>
   <div class="container admin-container">
+    <div
+      v-if="sidebarVisible"
+      class="sidebar-drawer-backdrop"
+      @click="closeSidebar"
+    ></div>
     <div class="admin-layout">
-      <aside class="card admin-sidebar">
+      <aside class="card admin-sidebar sidebar-drawer" :class="{ 'sidebar-drawer-open': sidebarVisible }">
         <h3 class="admin-sidebar-title">管理目录</h3>
         <button
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeMenu === 'overview' }"
-          @click="activeMenu = 'overview'"
+          @click="selectMenu('overview')"
         >
           数据总览
         </button>
         <button
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeMenu === 'users' }"
-          @click="activeMenu = 'users'"
+          @click="selectMenu('users')"
         >
           用户管理
         </button>
         <button
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeMenu === 'files' }"
-          @click="activeMenu = 'files'"
+          @click="selectMenu('files')"
         >
           全文件管理
         </button>
         <button
           class="admin-menu-item"
           :class="{ 'admin-menu-item-active': activeMenu === 'logs' }"
-          @click="activeMenu = 'logs'"
+          @click="selectMenu('logs')"
         >
           操作日志
         </button>
@@ -35,34 +40,39 @@
 
       <section class="admin-main">
         <div class="page-header">
+          <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="打开左侧目录">
+            <span class="menu-icon" aria-hidden="true">☰</span>
+            <span>目录</span>
+          </button>
+                <div v-if="sidebarVisible" class="sidebar-drawer-backdrop" @click="closeSidebar"></div>
           <h2 class="page-title">{{ currentTitle }}</h2>
-          <button class="btn btn-secondary" @click="logout">退出登录</button>
+                  <aside class="card admin-sidebar sidebar-drawer" :class="{ 'sidebar-drawer-open': sidebarVisible }">
         </div>
 
         <AdminOverviewPanel
           v-if="activeMenu === 'overview'"
-          :stats="stats"
+                      @click="selectMenu('overview')"
           :active-user-percent="activeUserPercent"
           :disabled-user-percent="disabledUserPercent"
           :ext-distribution="extDistribution"
           :ext-pie-gradient="extPieGradient"
         />
 
-        <AdminUsersPanel
+                      @click="selectMenu('users')"
           v-if="activeMenu === 'users'"
           :users="users"
           :page-size="pageSize"
           :user-page="userPage"
           :user-count="userCount"
           :user-keyword="userKeyword"
-          :user-status-loading="userStatusLoading"
+                      @click="selectMenu('files')"
           :reload-users="reloadUsers"
           :change-user-page="changeUserPage"
           :update-user-status="updateUserStatus"
           :update-user-permission="updateUserPermission"
           :format-text="formatText"
           :format-date-time="formatDateTime"
-          @update:userKeyword="userKeyword = $event"
+                      @click="selectMenu('logs')"
         />
 
         <AdminFilesPanel
@@ -70,6 +80,10 @@
           :files="files"
           :page-size="pageSize"
           :file-page="filePage"
+                      <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="切换左侧目录">
+                        <span class="menu-icon" aria-hidden="true">☰</span>
+                        <span>目录</span>
+                      </button>
           :file-count="fileCount"
           :file-keyword="fileKeyword"
           :file-user-name="fileUserName"
@@ -78,12 +92,14 @@
           :change-file-page="changeFilePage"
           :delete-file="deleteFile"
           :format-text="formatText"
-          :format-date-time="formatDateTime"
+          import { ref, onMounted } from 'vue';
           :format-file-size="formatFileSize"
           @update:fileKeyword="fileKeyword = $event"
           @update:fileUserName="fileUserName = $event"
         />
 
+
+          const sidebarVisible = ref(false);
         <AdminLogsPanel
           v-if="activeMenu === 'logs'"
           :logs="logs"
@@ -125,12 +141,15 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { onMounted } from 'vue';
 import AdminOverviewPanel from '@/components/admin/AdminOverviewPanel.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminFilesPanel from '@/components/admin/AdminFilesPanel.vue';
 import AdminLogsPanel from '@/components/admin/AdminLogsPanel.vue';
 import { useAdminDashboard } from '@/composables/useAdminDashboard';
+
+const sidebarVisible = ref(false);
 
 const {
   activeMenu,
@@ -187,6 +206,23 @@ const {
   formatActionLabel,
   formatLogDetail,
 } = useAdminDashboard();
+
+function openSidebar() {
+  sidebarVisible.value = true;
+}
+
+function closeSidebar() {
+  sidebarVisible.value = false;
+}
+
+function toggleSidebar() {
+  sidebarVisible.value = !sidebarVisible.value;
+}
+
+function selectMenu(menu: typeof activeMenu.value) {
+  activeMenu.value = menu;
+  closeSidebar();
+}
 
 onMounted(() => {
   void bootstrap();

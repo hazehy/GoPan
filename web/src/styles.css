@@ -200,24 +200,36 @@ a:hover {
 .x-scroll-panel {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
   padding-bottom: 6px;
 }
 
 .table-scroll-content {
-  display: inline-block;
-  min-width: 100%;
-  width: max-content;
+  display: block;
+  width: 100%;
 }
 
 .table-scroll-content > .table {
   width: 100%;
   min-width: 100%;
+}
+
+.file-table-scroll-content {
+  min-width: 900px;
+}
+
+.admin-users-table-scroll-content,
+.admin-files-table-scroll-content,
+.admin-logs-table-scroll-content {
+  min-width: 1120px;
+}
+
+.uploader-table-scroll-content {
+  min-width: 760px;
 }
 
 .x-scroll-panel::-webkit-scrollbar {
@@ -236,7 +248,6 @@ a:hover {
 
 .file-table {
   table-layout: fixed;
-  min-width: 900px;
 }
 
 .file-col-name {
@@ -1194,7 +1205,6 @@ a:hover {
 .admin-table {
   table-layout: fixed;
   overflow: visible;
-  min-width: 1120px;
 }
 
 .admin-table td {

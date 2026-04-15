@@ -9,7 +9,7 @@
       </div>
     </div>
     <div class="x-scroll-panel">
-      <div class="table-scroll-content">
+      <div class="table-scroll-content admin-files-table-scroll-content">
         <table class="table admin-table">
           <colgroup>
             <col class="admin-col-file-name" />

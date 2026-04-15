@@ -81,7 +81,7 @@
     </div>
 
     <div class="x-scroll-panel">
-      <div class="table-scroll-content">
+      <div class="table-scroll-content file-table-scroll-content">
         <table class="table file-table">
           <colgroup>
             <col class="file-col-name" />

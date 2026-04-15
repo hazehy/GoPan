@@ -14,7 +14,7 @@
       @change="onBindFileSelect"
     />
     <div class="uploader-panel x-scroll-panel uploader-scroll-panel">
-      <div class="uploader-panel-inner">
+      <div class="uploader-panel-inner uploader-table-scroll-content">
       <div class="uploader-top">
         <div class="uploader-file-meta">
           <p class="uploader-caption">文件上传</p>

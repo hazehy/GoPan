@@ -200,17 +200,17 @@ a:hover {
 .x-scroll-panel {
   width: 100%;
   max-width: 100%;
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
 }
 
 .table-scroll-content {
   display: inline-block;
-  min-width: 100%;
+  min-width: var(--scroll-min-width, 100%);
   width: max-content;
 }
 
@@ -220,17 +220,17 @@ a:hover {
 }
 
 .file-table-scroll-content {
-  min-width: 900px;
+  --scroll-min-width: 900px;
 }
 
 .admin-users-table-scroll-content,
 .admin-files-table-scroll-content,
 .admin-logs-table-scroll-content {
-  min-width: 1120px;
+  --scroll-min-width: 1120px;
 }
 
 .uploader-table-scroll-content {
-  min-width: 760px;
+  --scroll-min-width: 760px;
 }
 
 .x-scroll-panel::-webkit-scrollbar {
@@ -249,8 +249,6 @@ a:hover {
 
 .file-table {
   table-layout: fixed;
-  min-width: 900px;
-  width: max-content;
 }
 
 .file-col-name {
@@ -414,7 +412,14 @@ a:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
+}
+
+.page-header .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .page-title {
@@ -422,6 +427,7 @@ a:hover {
   color: #1e3a8a;
   font-size: 24px;
   font-weight: 600;
+  min-width: 0;
 }
 
 .disk-tabs {
@@ -1208,8 +1214,6 @@ a:hover {
 .admin-table {
   table-layout: fixed;
   overflow: visible;
-  min-width: 1120px;
-  width: max-content;
 }
 
 .admin-table td {
@@ -1354,9 +1358,8 @@ a:hover {
   }
 
   .page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
   }
 
   .page-title {

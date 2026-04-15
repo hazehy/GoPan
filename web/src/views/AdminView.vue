@@ -1,10 +1,7 @@
 <template>
   <div class="container admin-container">
-    <div
-      v-if="sidebarVisible"
-      class="sidebar-drawer-backdrop"
-      @click="closeSidebar"
-    ></div>
+    <div v-if="sidebarVisible" class="sidebar-drawer-backdrop" @click="closeSidebar"></div>
+
     <div class="admin-layout">
       <aside class="card admin-sidebar sidebar-drawer" :class="{ 'sidebar-drawer-open': sidebarVisible }">
         <h3 class="admin-sidebar-title">管理目录</h3>
@@ -40,39 +37,38 @@
 
       <section class="admin-main">
         <div class="page-header">
-          <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="打开左侧目录">
+          <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="切换左侧目录">
             <span class="menu-icon" aria-hidden="true">☰</span>
             <span>目录</span>
           </button>
-                <div v-if="sidebarVisible" class="sidebar-drawer-backdrop" @click="closeSidebar"></div>
           <h2 class="page-title">{{ currentTitle }}</h2>
-                  <aside class="card admin-sidebar sidebar-drawer" :class="{ 'sidebar-drawer-open': sidebarVisible }">
+          <button class="btn btn-secondary" type="button" @click="logout">退出登录</button>
         </div>
 
         <AdminOverviewPanel
           v-if="activeMenu === 'overview'"
-                      @click="selectMenu('overview')"
+          :stats="stats"
           :active-user-percent="activeUserPercent"
           :disabled-user-percent="disabledUserPercent"
           :ext-distribution="extDistribution"
           :ext-pie-gradient="extPieGradient"
         />
 
-                      @click="selectMenu('users')"
+        <AdminUsersPanel
           v-if="activeMenu === 'users'"
           :users="users"
           :page-size="pageSize"
           :user-page="userPage"
           :user-count="userCount"
           :user-keyword="userKeyword"
-                      @click="selectMenu('files')"
+          :user-status-loading="userStatusLoading"
           :reload-users="reloadUsers"
           :change-user-page="changeUserPage"
           :update-user-status="updateUserStatus"
           :update-user-permission="updateUserPermission"
           :format-text="formatText"
           :format-date-time="formatDateTime"
-                      @click="selectMenu('logs')"
+          @update:userKeyword="userKeyword = $event"
         />
 
         <AdminFilesPanel
@@ -80,10 +76,6 @@
           :files="files"
           :page-size="pageSize"
           :file-page="filePage"
-                      <button class="btn btn-secondary sidebar-toggle-btn" type="button" @click="toggleSidebar" aria-label="切换左侧目录">
-                        <span class="menu-icon" aria-hidden="true">☰</span>
-                        <span>目录</span>
-                      </button>
           :file-count="fileCount"
           :file-keyword="fileKeyword"
           :file-user-name="fileUserName"
@@ -92,14 +84,12 @@
           :change-file-page="changeFilePage"
           :delete-file="deleteFile"
           :format-text="formatText"
-          import { ref, onMounted } from 'vue';
+          :format-date-time="formatDateTime"
           :format-file-size="formatFileSize"
           @update:fileKeyword="fileKeyword = $event"
           @update:fileUserName="fileUserName = $event"
         />
 
-
-          const sidebarVisible = ref(false);
         <AdminLogsPanel
           v-if="activeMenu === 'logs'"
           :logs="logs"
@@ -141,8 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import AdminOverviewPanel from '@/components/admin/AdminOverviewPanel.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminFilesPanel from '@/components/admin/AdminFilesPanel.vue';
@@ -206,10 +195,6 @@ const {
   formatActionLabel,
   formatLogDetail,
 } = useAdminDashboard();
-
-function openSidebar() {
-  sidebarVisible.value = true;
-}
 
 function closeSidebar() {
   sidebarVisible.value = false;

@@ -80,79 +80,81 @@
       </select>
     </div>
 
-    <table class="table file-table">
-      <colgroup>
-        <col class="file-col-name" />
-        <col class="file-col-size" />
-        <col class="file-col-updated" />
-        <col class="file-col-action" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>名称</th>
-          <th>大小</th>
-          <th>最后更新时间</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in props.pagedDisplayFiles" :key="item.identity">
-          <td>
-            <span class="file-name-cell">
-              <span class="file-icon">{{ props.getFileIcon(item) }}</span>
-              <a
-                v-if="props.isFolder(item)"
-                href="javascript:void(0)"
-                @click="props.openFolder(item)"
-                class="file-name-text"
-                :title="item.name"
-              >
-                {{ item.name }}
-              </a>
-              <span
-                v-else
-                class="file-name-text"
-                :title="`${item.name}${item.ext ?? ''}`"
-              >
-                {{ `${item.name}${item.ext ?? ""}` }}
+    <div class="x-scroll-panel">
+      <table class="table file-table">
+        <colgroup>
+          <col class="file-col-name" />
+          <col class="file-col-size" />
+          <col class="file-col-updated" />
+          <col class="file-col-action" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>大小</th>
+            <th>最后更新时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in props.pagedDisplayFiles" :key="item.identity">
+            <td>
+              <span class="file-name-cell">
+                <span class="file-icon">{{ props.getFileIcon(item) }}</span>
+                <a
+                  v-if="props.isFolder(item)"
+                  href="javascript:void(0)"
+                  @click="props.openFolder(item)"
+                  class="file-name-text"
+                  :title="item.name"
+                >
+                  {{ item.name }}
+                </a>
+                <span
+                  v-else
+                  class="file-name-text"
+                  :title="`${item.name}${item.ext ?? ''}`"
+                >
+                  {{ `${item.name}${item.ext ?? ""}` }}
+                </span>
               </span>
-            </span>
-          </td>
-          <td>{{ props.formatFileSize(item.size) }}</td>
-          <td>{{ props.formatUpdatedAt(item.updated_at) }}</td>
-          <td>
-            <div class="action-group">
-              <button
-                class="btn btn-secondary"
-                @click="props.downloadFile(item)"
-                :disabled="props.isFolder(item) || !item.path"
-              >
-                下载
-              </button>
-              <button class="btn btn-secondary" @click="props.renameItem(item)">
-                重命名
-              </button>
-              <button class="btn btn-secondary" @click="props.moveItem(item)">
-                移动
-              </button>
-              <button
-                class="btn btn-secondary"
-                @click="props.createShare(item)"
-                :disabled="!item.repository_identity"
-              >
-                分享
-              </button>
-              <button class="btn btn-danger" @click="props.deleteItem(item)">
-                删除
-              </button>
-            </div>
-          </td>
-        </tr>
-        <tr v-if="!props.pagedDisplayFiles.length">
-          <td colspan="4" class="muted">当前目录暂无文件</td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+            <td>{{ props.formatFileSize(item.size) }}</td>
+            <td>{{ props.formatUpdatedAt(item.updated_at) }}</td>
+            <td>
+              <div class="action-group">
+                <button
+                  class="btn btn-secondary"
+                  @click="props.downloadFile(item)"
+                  :disabled="props.isFolder(item) || !item.path"
+                >
+                  下载
+                </button>
+                <button class="btn btn-secondary" @click="props.renameItem(item)">
+                  重命名
+                </button>
+                <button class="btn btn-secondary" @click="props.moveItem(item)">
+                  移动
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  @click="props.createShare(item)"
+                  :disabled="!item.repository_identity"
+                >
+                  分享
+                </button>
+                <button class="btn btn-danger" @click="props.deleteItem(item)">
+                  删除
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!props.pagedDisplayFiles.length">
+            <td colspan="4" class="muted">当前目录暂无文件</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="pagination">
       <button

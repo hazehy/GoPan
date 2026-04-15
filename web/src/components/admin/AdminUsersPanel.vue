@@ -7,85 +7,87 @@
         <button class="btn btn-secondary" @click="props.reloadUsers">查询</button>
       </div>
     </div>
-    <table class="table admin-table">
-      <colgroup>
-        <col class="admin-col-user-name" />
-        <col class="admin-col-user-email" />
-        <col class="admin-col-user-role" />
-        <col class="admin-col-user-status" />
-        <col class="admin-col-user-status" />
-        <col class="admin-col-user-status" />
-        <col class="admin-col-user-status" />
-        <col class="admin-col-user-login" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>用户名</th>
-          <th>邮箱</th>
-          <th>角色</th>
-          <th>状态</th>
-          <th>上传权限</th>
-          <th>下载权限</th>
-          <th>分享权限</th>
-          <th>最近登录</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in props.users" :key="user.identity">
-          <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.name" :title="user.name">{{ user.name }}</span></td>
-          <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.email" :title="user.email">{{ user.email }}</span></td>
-          <td>{{ user.role === 2 ? '管理员' : '普通用户' }}</td>
-          <td>
-            <select
-              class="input admin-compact-select"
-              :disabled="user.role === 2 || props.userStatusLoading"
-              :value="String(user.status)"
-              @change="onStatusChange($event, user.identity, user.status)"
-            >
-              <option value="1">正常</option>
-              <option value="2">禁用</option>
-            </select>
-          </td>
-          <td>
-            <select
-              class="input admin-compact-select"
-              :disabled="user.role === 2 || props.userStatusLoading"
-              :value="String(user.upload_permission)"
-              @change="onPermissionChange($event, user.identity, 'upload_permission', user.upload_permission)"
-            >
-              <option value="1">允许</option>
-              <option value="2">禁止</option>
-            </select>
-          </td>
-          <td>
-            <select
-              class="input admin-compact-select"
-              :disabled="user.role === 2 || props.userStatusLoading"
-              :value="String(user.download_permission)"
-              @change="onPermissionChange($event, user.identity, 'download_permission', user.download_permission)"
-            >
-              <option value="1">允许</option>
-              <option value="2">禁止</option>
-            </select>
-          </td>
-          <td>
-            <select
-              class="input admin-compact-select"
-              :disabled="user.role === 2 || props.userStatusLoading"
-              :value="String(user.share_permission)"
-              @change="onPermissionChange($event, user.identity, 'share_permission', user.share_permission)"
-            >
-              <option value="1">允许</option>
-              <option value="2">禁止</option>
-            </select>
-          </td>
-          <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(user.last_login_at)" :title="props.formatText(user.last_login_at)">{{ props.formatDateTime(user.last_login_at) }}</span></td>
-        </tr>
-        <tr v-if="!props.users.length">
-          <td colspan="8" class="muted">暂无用户数据</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="x-scroll-panel">
+      <table class="table admin-table">
+        <colgroup>
+          <col class="admin-col-user-name" />
+          <col class="admin-col-user-email" />
+          <col class="admin-col-user-role" />
+          <col class="admin-col-user-status" />
+          <col class="admin-col-user-status" />
+          <col class="admin-col-user-status" />
+          <col class="admin-col-user-status" />
+          <col class="admin-col-user-login" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>邮箱</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>上传权限</th>
+            <th>下载权限</th>
+            <th>分享权限</th>
+            <th>最近登录</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in props.users" :key="user.identity">
+            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.name" :title="user.name">{{ user.name }}</span></td>
+            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="user.email" :title="user.email">{{ user.email }}</span></td>
+            <td>{{ user.role === 2 ? '管理员' : '普通用户' }}</td>
+            <td>
+              <select
+                class="input admin-compact-select"
+                :disabled="user.role === 2 || props.userStatusLoading"
+                :value="String(user.status)"
+                @change="onStatusChange($event, user.identity, user.status)"
+              >
+                <option value="1">正常</option>
+                <option value="2">禁用</option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="input admin-compact-select"
+                :disabled="user.role === 2 || props.userStatusLoading"
+                :value="String(user.upload_permission)"
+                @change="onPermissionChange($event, user.identity, 'upload_permission', user.upload_permission)"
+              >
+                <option value="1">允许</option>
+                <option value="2">禁止</option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="input admin-compact-select"
+                :disabled="user.role === 2 || props.userStatusLoading"
+                :value="String(user.download_permission)"
+                @change="onPermissionChange($event, user.identity, 'download_permission', user.download_permission)"
+              >
+                <option value="1">允许</option>
+                <option value="2">禁止</option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="input admin-compact-select"
+                :disabled="user.role === 2 || props.userStatusLoading"
+                :value="String(user.share_permission)"
+                @change="onPermissionChange($event, user.identity, 'share_permission', user.share_permission)"
+              >
+                <option value="1">允许</option>
+                <option value="2">禁止</option>
+              </select>
+            </td>
+            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(user.last_login_at)" :title="props.formatText(user.last_login_at)">{{ props.formatDateTime(user.last_login_at) }}</span></td>
+          </tr>
+          <tr v-if="!props.users.length">
+            <td colspan="8" class="muted">暂无用户数据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <div class="pagination">
       <button class="btn btn-secondary" :disabled="props.userPage <= 1" @click="props.changeUserPage(props.userPage - 1)">上一页</button>
       <button class="btn btn-secondary" :disabled="props.userPage * props.pageSize >= props.userCount" @click="props.changeUserPage(props.userPage + 1)">下一页</button>

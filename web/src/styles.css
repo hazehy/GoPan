@@ -193,6 +193,28 @@ a:hover {
   overflow: hidden;
 }
 
+.x-scroll-panel {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+
+.x-scroll-panel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.x-scroll-panel::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 999px;
+}
+
+.x-scroll-panel::-webkit-scrollbar-track {
+  background: #eff6ff;
+  border-radius: 999px;
+}
+
 .file-table {
   table-layout: fixed;
 }
@@ -451,6 +473,10 @@ a:hover {
 
 .uploader-panel {
   margin-top: 2px;
+}
+
+.uploader-panel-inner {
+  width: 100%;
 }
 
 .uploader-top {
@@ -1270,5 +1296,17 @@ a:hover {
   .admin-pie-layout {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .file-table {
+    min-width: 860px;
+  }
+
+  .admin-table {
+    min-width: 980px;
+  }
+
+  .uploader-panel-inner {
+    min-width: 760px;
   }
 }

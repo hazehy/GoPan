@@ -209,12 +209,13 @@ a:hover {
 }
 
 .table-scroll-content {
-  display: block;
-  width: 100%;
+  display: inline-block;
+  min-width: 100%;
+  width: max-content;
 }
 
 .table-scroll-content > .table {
-  width: 100%;
+  width: auto;
   min-width: 100%;
 }
 

@@ -196,6 +196,10 @@ build_with_retry() {
 
 up_stack() {
   if [ "$#" -eq 0 ]; then
+    if [ "${COMPOSE_IMPL:-}" = "v1" ]; then
+      warn "检测到 Compose v1，全量启动将先清理旧容器再启动，以避免重建兼容性问题"
+      compose down --remove-orphans || true
+    fi
     compose up -d
   else
     compose up -d "$@"

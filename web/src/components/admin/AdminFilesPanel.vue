@@ -9,44 +9,46 @@
       </div>
     </div>
     <div class="x-scroll-panel">
-      <table class="table admin-table">
-        <colgroup>
-          <col class="admin-col-file-name" />
-          <col class="admin-col-file-user" />
-          <col class="admin-col-file-path" />
-          <col class="admin-col-file-type" />
-          <col class="admin-col-file-size" />
-          <col class="admin-col-file-updated" />
-          <col class="admin-col-file-action" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>名称</th>
-            <th>用户名</th>
-            <th>路径</th>
-            <th>类型</th>
-            <th>大小</th>
-            <th>更新时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in props.files" :key="item.identity">
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="`${item.name}${item.ext || ''}`" :title="`${item.name}${item.ext || ''}`">{{ item.name }}{{ item.ext || '' }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.user_name || '-'" :title="item.user_name || '-'">{{ item.user_name || '-' }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(item.path)" :title="props.formatText(item.path)">{{ props.formatText(item.path) }}</span></td>
-            <td>{{ item.repository_identity ? '文件' : '文件夹' }}</td>
-            <td>{{ props.formatFileSize(item.size) }}</td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(item.updated_at)" :title="props.formatText(item.updated_at)">{{ props.formatDateTime(item.updated_at) }}</span></td>
-            <td>
-              <button class="btn btn-danger" :disabled="props.fileDeleteLoading" @click="props.deleteFile(item.identity)">删除</button>
-            </td>
-          </tr>
-          <tr v-if="!props.files.length">
-            <td colspan="7" class="muted">暂无文件数据</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll-content">
+        <table class="table admin-table">
+          <colgroup>
+            <col class="admin-col-file-name" />
+            <col class="admin-col-file-user" />
+            <col class="admin-col-file-path" />
+            <col class="admin-col-file-type" />
+            <col class="admin-col-file-size" />
+            <col class="admin-col-file-updated" />
+            <col class="admin-col-file-action" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>用户名</th>
+              <th>路径</th>
+              <th>类型</th>
+              <th>大小</th>
+              <th>更新时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in props.files" :key="item.identity">
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="`${item.name}${item.ext || ''}`" :title="`${item.name}${item.ext || ''}`">{{ item.name }}{{ item.ext || '' }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.user_name || '-'" :title="item.user_name || '-'">{{ item.user_name || '-' }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(item.path)" :title="props.formatText(item.path)">{{ props.formatText(item.path) }}</span></td>
+              <td>{{ item.repository_identity ? '文件' : '文件夹' }}</td>
+              <td>{{ props.formatFileSize(item.size) }}</td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="props.formatText(item.updated_at)" :title="props.formatText(item.updated_at)">{{ props.formatDateTime(item.updated_at) }}</span></td>
+              <td>
+                <button class="btn btn-danger" :disabled="props.fileDeleteLoading" @click="props.deleteFile(item.identity)">删除</button>
+              </td>
+            </tr>
+            <tr v-if="!props.files.length">
+              <td colspan="7" class="muted">暂无文件数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="pagination">
       <button class="btn btn-secondary" :disabled="props.filePage <= 1" @click="props.changeFilePage(props.filePage - 1)">上一页</button>

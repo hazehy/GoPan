@@ -74,36 +74,38 @@
     </div>
 
     <div class="x-scroll-panel">
-      <table class="table admin-table">
-        <colgroup>
-          <col class="admin-col-log-time" />
-          <col class="admin-col-log-user" />
-          <col class="admin-col-log-action" />
-          <col class="admin-col-log-target" />
-          <col class="admin-col-log-detail" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>时间</th>
-            <th>操作人</th>
-            <th>操作类型</th>
-            <th>目标标识</th>
-            <th>描述</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in props.logs" :key="item.identity">
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.created_at" :title="item.created_at">{{ props.formatDateTime(item.created_at) }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.actor_name || item.actor_identity || '-'" :title="item.actor_name || item.actor_identity || '-'">{{ props.formatActorDisplay(item.actor_name, item.actor_identity) }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.action" :title="item.action">{{ props.formatActionLabel(item.action) }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.target_identity || '-'" :title="item.target_identity || '-'">{{ item.target_identity || '-' }}</span></td>
-            <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.detail || '-'" :title="item.detail || '-'">{{ props.formatLogDetail(item.detail) }}</span></td>
-          </tr>
-          <tr v-if="!props.logs.length">
-            <td colspan="5" class="muted">暂无日志数据</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll-content">
+        <table class="table admin-table">
+          <colgroup>
+            <col class="admin-col-log-time" />
+            <col class="admin-col-log-user" />
+            <col class="admin-col-log-action" />
+            <col class="admin-col-log-target" />
+            <col class="admin-col-log-detail" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>操作人</th>
+              <th>操作类型</th>
+              <th>目标标识</th>
+              <th>描述</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in props.logs" :key="item.identity">
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.created_at" :title="item.created_at">{{ props.formatDateTime(item.created_at) }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.actor_name || item.actor_identity || '-'" :title="item.actor_name || item.actor_identity || '-'">{{ props.formatActorDisplay(item.actor_name, item.actor_identity) }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.action" :title="item.action">{{ props.formatActionLabel(item.action) }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.target_identity || '-'" :title="item.target_identity || '-'">{{ item.target_identity || '-' }}</span></td>
+              <td><span class="admin-cell-ellipsis admin-tooltip" :data-tooltip="item.detail || '-'" :title="item.detail || '-'">{{ props.formatLogDetail(item.detail) }}</span></td>
+            </tr>
+            <tr v-if="!props.logs.length">
+              <td colspan="5" class="muted">暂无日志数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="pagination">
       <button class="btn btn-secondary" :disabled="props.logPage <= 1" @click="props.changeLogPage(props.logPage - 1)">上一页</button>

@@ -13,18 +13,15 @@ body {
   margin: 0;
   min-height: 100vh;
   background: linear-gradient(180deg, #eef6ff 0%, #dceeff 100%);
-  overflow-x: hidden;
 }
 
 #app {
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 .app-shell {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
 }
 
 .polygon-bg-canvas {
@@ -39,7 +36,6 @@ body {
 .app-content {
   position: relative;
   z-index: 1;
-  overflow-x: hidden;
 }
 
 a {
@@ -55,7 +51,6 @@ a:hover {
   max-width: 1080px;
   margin: 0 auto;
   padding: 24px 20px;
-  overflow-x: hidden;
 }
 
 .card {
@@ -209,8 +204,14 @@ a:hover {
   padding-bottom: 6px;
 }
 
-.x-scroll-panel > .table {
+.table-scroll-content {
+  display: inline-block;
+  min-width: 100%;
   width: max-content;
+}
+
+.table-scroll-content > .table {
+  width: 100%;
   min-width: 100%;
 }
 
@@ -230,6 +231,7 @@ a:hover {
 
 .file-table {
   table-layout: fixed;
+  min-width: 900px;
 }
 
 .file-col-name {
@@ -1187,7 +1189,7 @@ a:hover {
 .admin-table {
   table-layout: fixed;
   overflow: visible;
-  min-width: 980px;
+  min-width: 1120px;
 }
 
 .admin-table td {
@@ -1343,14 +1345,6 @@ a:hover {
 }
 
 @media (max-width: 768px) {
-  .file-table {
-    min-width: 900px;
-  }
-
-  .admin-table {
-    min-width: 1120px;
-  }
-
   .uploader-panel-inner {
     min-width: 760px;
   }

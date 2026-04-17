@@ -33,6 +33,43 @@ import {
   promptDialog,
 } from '@/composables/useDialog';
 
+async function copyTextWithFallback(text: string): Promise<boolean> {
+  if (
+    typeof window !== 'undefined' &&
+    window.isSecureContext &&
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard?.writeText
+  ) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', 'true');
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-9999px';
+  textArea.style.top = '0';
+  textArea.style.opacity = '0';
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } finally {
+    document.body.removeChild(textArea);
+  }
+
+  return copied;
+}
+
 export function useDiskBrowser() {
   const router = useRouter();
   const authStore = useAuthStore();
@@ -400,8 +437,16 @@ export function useDiskBrowser() {
         throw new Error('创建分享失败：未返回分享标识');
       }
       const link = `${window.location.origin}/share/${shareIdentity}`;
-      await navigator.clipboard.writeText(link);
-      await alertDialog(`分享链接已复制：${link}`, '创建成功');
+
+      const copied = await copyTextWithFallback(link);
+      if (copied) {
+        await alertDialog(`分享链接已复制：${link}`, '创建成功');
+      } else {
+        await alertDialog(
+          `分享链接已生成，但自动复制失败，请手动复制：\n${link}`,
+          '创建成功',
+        );
+      }
     } catch (error) {
       errorMessage.value = toErrorMessage(error);
     }

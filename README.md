@@ -1,366 +1,339 @@
 # GoPan
 
-GoPan 是一个基于 Go + Vue 3 的网盘系统，支持用户注册登录、文件管理、分片上传、分享链接、管理员后台和审计日志。
+GoPan 是一个自建网盘系统，支持用户注册登录、文件上传与下载、分片上传、文件管理、分享链接、管理员后台以及审计日志。项目采用前后端分离架构，后端基于 Go + go-zero，前端基于 Vue 3 + TypeScript + Vite。
+
+## 功能概览
+
+- 用户注册、登录、令牌刷新、用户详情查询
+- 发送邮箱验证码
+- 文件上传、预上传、分片上传、分片上传完成、下载、删除、重命名、移动
+- 文件夹创建和用户目录树管理
+- 资源保存和分享链接创建
+- 管理员控制台：系统概览、用户列表、用户状态管理、文件列表、文件删除、日志查看
+- 腾讯云 COS 文件存储和分片上传支持
 
 ## 技术栈
 
-- 后端: Go, go-zero, xorm, MySQL, Redis
-- 前端: Vue 3, TypeScript, Vite, Pinia, Vue Router, Axios
-- 对象存储: Tencent COS
+- 后端：Go 1.25.7、go-zero、xorm、MySQL、Redis、JWT
+- 对象存储：腾讯云 COS
+- 前端：Vue 3、TypeScript、Vite、Pinia、Vue Router、Axios
+- 部署：Docker、Docker Compose、Nginx
 
-## 项目结构
+## 代码结构
 
-```text
-GoPan/
-  databases.sql                # 数据库初始化脚本
-  README.md                    # 项目说明（本文件）
-  gopan/                       # 后端服务
-    gopan.go                   # 服务入口
-    gopan.api                  # API 定义
-    etc/gopan-api.yaml         # 默认配置
-    etc/gopan-api.local.yaml   # 本地配置（建议）
-    internal/                  # handler/logic/svc/types
-    helper/                    # 公共辅助能力
-    models/                    # 数据模型
-  web/                         # 前端工程
-    package.json
-    vite.config.ts
-    src/
-```
+### 后端
+
+- `gopan/gopan.go`：后端服务入口
+- `gopan/gopan.api`：go-zero API 定义
+- `gopan/etc/`：不同环境的配置文件
+- `gopan/internal/handler/`：HTTP 路由和请求处理
+- `gopan/internal/logic/`：业务逻辑
+- `gopan/internal/middleware/`：认证、管理员鉴权等中间件
+- `gopan/internal/svc/`：服务上下文和依赖注入
+- `gopan/internal/types/`：请求与响应结构
+- `gopan/helper/`：通用工具，例如 JWT、验证码、COS、密码处理
+- `gopan/models/`：数据库模型
+
+### 前端
+
+- `web/src/views/`：页面视图，例如登录、注册、网盘、后台、分享页
+- `web/src/router/`：路由和路由守卫
+- `web/src/stores/`：Pinia 状态管理
+- `web/src/api/`：接口封装
+- `web/src/components/`：通用组件
+- `web/src/utils/`：工具方法
+- `web/nginx/default.conf`：生产环境 Nginx 配置
+
+### 其他关键文件
+
+- `databases.sql`：数据库建表脚本
+- `docker-compose.yml`：完整服务编排
+- `deploy-docker.sh`：Linux 部署脚本
+- `.env.example`：Docker 部署环境变量示例
+
+## 业务架构
+
+### 文件存储模式
+
+系统使用“公共文件池 + 用户仓库”的设计：
+
+- `repository_pool` 保存文件内容本体，以哈希去重
+- `user_repository` 保存用户自己的目录结构和文件引用
+- `share_link` 保存分享信息和访问控制
+
+这样做的好处是：
+
+- 相同内容的文件只保留一份物理数据
+- 用户可以拥有自己的目录和文件名，而不重复保存内容
+- 分享和文件管理可以围绕统一的文件池展开
+
+### 权限模型
+
+`user_basic` 里有几类关键字段：
+
+- `status`：用户是否正常或禁用
+- `role`：普通用户或管理员
+- `upload_permission`：上传权限
+- `download_permission`：下载权限
+- `share_permission`：分享权限
+
+管理员接口需要额外通过 Admin 中间件校验，普通用户登录后仅能访问授权路由。
+
+### 认证流程
+
+- 前端登录后会把 `token` 和 `refresh_token` 存到 `localStorage`
+- 请求通过 Axios 拦截器自动带上 `Authorization`
+- 后端认证中间件会校验 JWT，并检查用户状态
+- 前端在收到 `401` 时会自动尝试用 refresh token 刷新
+
+### 前端路由
+
+- `/login`：登录页
+- `/register`：注册页
+- `/disk`：网盘首页，需要登录
+- `/admin`：后台页，需要管理员权限
+- `/share/:identity`：分享页，无需登录
+
+## 数据库表说明
+
+`databases.sql` 中的主要表如下。
+
+| 表名              | 作用                                     |
+| ----------------- | ---------------------------------------- |
+| `user_basic`      | 用户基础信息、角色、权限和登录状态       |
+| `repository_pool` | 公共文件池，保存文件内容、哈希和存储路径 |
+| `user_repository` | 用户目录树和文件引用                     |
+| `share_link`      | 分享记录、过期时间、访问次数和密码哈希   |
+| `audit_log`       | 操作审计日志                             |
+
+### 关键关系
+
+- `user_repository.user_identity` 关联 `user_basic.identity`
+- `share_link.user_identity` 关联 `user_basic.identity`
+- `user_repository.repository_identity` 指向 `repository_pool.identity`
+- 文件夹节点在 `user_repository` 中表现为 `repository_identity` 为空
 
 ## 环境要求
 
-- Go: 以 `go.mod` 为准（当前为 `go 1.25.7`）
-- Node.js: 建议 `>= 18`
-- npm: 建议 `>= 9`
-- MySQL: `8.x`
-- Redis: `6.x` 及以上
+### 本地开发
 
-## 快速开始
+- Go 1.25.7 或兼容版本
+- Node.js 20 或兼容版本
+- MySQL 8.x
+- Redis 7.x
 
-### Docker 一键部署
+### Docker 部署
 
-如果你在 Linux 服务器上部署，优先使用仓库根目录的 `deploy-docker.sh`。
+- Docker Engine
+- Docker Compose v2 优先，v1 也可用但不推荐
 
-```bash
-chmod +x deploy-docker.sh
-./deploy-docker.sh
-```
+## 配置说明
 
-脚本会做这些事：
+### 后端配置文件
 
-- 检查并安装 Docker / Docker Compose
-- 如果没有 `.env`，自动从 `.env.example` 生成
-- 使用 `docker compose up -d --build` 启动整套服务
+后端配置位于：
 
-说明：Docker 构建前端时使用 `build:docker`（仅 `vite build`）以减少低配服务器上的构建耗时；本地开发和提交前检查仍建议使用 `npm run build`（含 `vue-tsc`）。
+- `gopan/etc/gopan-api.yaml`
+- `gopan/etc/gopan-api.local.yaml`
+- `gopan/etc/gopan-api.docker.yaml`
 
-部署前请先修改 `.env` 里的数据库密码和 `GOPAN_JWT_KEY`，以及 COS / SMTP 相关配置。
+本地开发建议使用 `gopan/etc/gopan-api.local.yaml`。Docker 部署时，`gopan/entrypoint.sh` 会把 `gopan-api.docker.yaml` 渲染成实际运行配置。
 
-### 1. 初始化数据库
+### Docker 环境变量
 
-1. 创建数据库，例如 `gopan`
-2. 执行 `databases.sql`
+项目根目录提供了 `.env.example`，首次部署建议复制为 `.env` 并修改敏感信息。
 
-### 2. 配置后端
+| 变量                       | 说明                          |
+| -------------------------- | ----------------------------- |
+| `MYSQL_ROOT_PASSWORD`      | MySQL root 密码               |
+| `MYSQL_DATABASE`           | 数据库名，默认 `gopan`        |
+| `GOPAN_REDIS_ADDR`         | Redis 地址，默认 `redis:6379` |
+| `MYSQL_IMAGE`              | MySQL 镜像版本                |
+| `REDIS_IMAGE`              | Redis 镜像版本                |
+| `GOPAN_JWT_KEY`            | JWT 签名密钥                  |
+| `GOPAN_FROM_MAIL`          | 发件人邮箱                    |
+| `GOPAN_MAIL_PASSWORD`      | 邮箱授权码                    |
+| `GOPAN_SMTP_HOST`          | SMTP 主机                     |
+| `GOPAN_SMTP_PORT`          | SMTP 端口                     |
+| `GOPAN_TENCENT_SECRET_ID`  | 腾讯云 SecretId               |
+| `GOPAN_TENCENT_SECRET_KEY` | 腾讯云 SecretKey              |
+| `GOPAN_COS_BUCKET_URL`     | 腾讯云 COS Bucket URL         |
+| `TZ`                       | 时区，默认 `Asia/Shanghai`    |
+| `FRONTEND_PORT`            | 前端对外映射端口，默认 `80`   |
 
-后端读取两类配置。
+### 典型本地配置
 
-1. YAML 配置文件
+如果你先在本地验证后端，至少要确保：
 
-- 默认文件: `gopan/etc/gopan-api.yaml`
-- 推荐本地文件: `gopan/etc/gopan-api.local.yaml`
-- `.gitignore` 已忽略 `gopan/etc/*.local.yaml`
+- MySQL 连接串可用
+- Redis 地址正确
+- `GOPAN_JWT_KEY` 已设置
+- 邮件验证码功能所需的 SMTP 配置已设置
+- 如果要启用 COS 上传，`GOPAN_TENCENT_SECRET_ID`、`GOPAN_TENCENT_SECRET_KEY` 和 `GOPAN_COS_BUCKET_URL` 都要正确配置
 
-2. 环境变量（敏感配置）
+## 本地开发
 
-| 变量名                     | 说明          | 默认值             |
-| -------------------------- | ------------- | ------------------ |
-| `GOPAN_JWT_KEY`            | JWT 密钥      | `change-me-in-env` |
-| `GOPAN_FROM_MAIL`          | 发件邮箱      | 空                 |
-| `GOPAN_MAIL_PASSWORD`      | 邮箱授权码    | 空                 |
-| `GOPAN_SMTP_HOST`          | SMTP 主机     | `smtp.163.com`     |
-| `GOPAN_SMTP_PORT`          | SMTP 端口     | `465`              |
-| `GOPAN_TENCENT_SECRET_ID`  | COS SecretId  | 空                 |
-| `GOPAN_TENCENT_SECRET_KEY` | COS SecretKey | 空                 |
-| `GOPAN_COS_BUCKET_URL`     | COS 桶地址    | 空                 |
+### 1. 准备依赖
 
-Windows PowerShell 示例:
+先启动 MySQL 和 Redis，并执行 `databases.sql` 初始化表结构。
 
-```powershell
-$env:GOPAN_JWT_KEY="replace-with-strong-random-string"
-$env:GOPAN_FROM_MAIL="your_mail@163.com"
-$env:GOPAN_MAIL_PASSWORD="your_mail_auth_code"
-$env:GOPAN_SMTP_HOST="smtp.163.com"
-$env:GOPAN_SMTP_PORT="465"
-$env:GOPAN_TENCENT_SECRET_ID="AKIDxxxx"
-$env:GOPAN_TENCENT_SECRET_KEY="xxxx"
-$env:GOPAN_COS_BUCKET_URL="https://xxx.cos.ap-guangzhou.myqcloud.com"
-```
+### 2. 启动后端
 
-### 3. 启动后端
+在仓库根目录执行：
 
 ```bash
-cd gopan
-go run gopan.go -f etc/gopan-api.local.yaml
+go run ./gopan/gopan.go -f gopan/etc/gopan-api.local.yaml
 ```
 
-默认监听: `0.0.0.0:8888`
+后端默认监听 `8888` 端口。
 
-### 4. 启动前端
+### 3. 启动前端
+
+在 `web/` 目录下执行：
 
 ```bash
-cd web
 npm install
 npm run dev
 ```
 
-默认地址: `http://127.0.0.1:5173`
+Vite 开发服务器默认运行在 `5173`，并且已经把 `/api` 代理到 `http://127.0.0.1:8888`。
 
-代理规则见 `web/vite.config.ts`: `/api/* -> http://127.0.0.1:8888/*`
-
-## 构建与质量检查
-
-### 后端
-
-```bash
-go build ./...
-```
-
-### 前端
+### 4. 构建前端
 
 ```bash
 cd web
 npm run build
 ```
 
-### 建议测试命令
+这个命令会先执行 TypeScript 检查，再生成生产构建产物。
+
+### 5. 本地访问地址
+
+- 前端：`http://127.0.0.1:5173`
+- 后端：`http://127.0.0.1:8888`
+
+## Docker 部署
+
+### 方式一：Docker Compose
 
 ```bash
-go test ./...
-```
-
-说明:
-
-- 部分测试依赖外部服务（MySQL/Redis/COS/SMTP）和本地测试资源文件。
-- 缺少环境变量时，`mail_test`、`cos_test` 会自动跳过。
-
-## 功能模块
-
-### 用户端
-
-- 登录: `/login`
-- 注册: `/register`
-- 网盘主页: `/disk`
-- 分享页: `/share/:identity`
-- 上传增强: 多文件上传队列、任务暂停/继续、断点续传
-
-### 管理端
-
-- 管理页: `/admin`
-- 能力: 数据总览、用户管理、文件管理、日志审计
-
-## API 分组
-
-接口定义: `gopan/gopan.api`
-
-运行时路由: `gopan/internal/handler/routes.go`
-
-- 公共接口
-  - `POST /user/login`
-  - `POST /register`
-  - `POST /code/send`
-  - `GET /resource/info`
-  - `GET /user/detail`
-- 用户接口（Auth）
-  - `POST /file/upload`
-  - `POST /file/preupload`
-  - `POST /file/chunkupload`
-  - `POST /file/chunkupload/complete`
-  - `GET /file/list`
-  - `DELETE /file/delete`
-  - `POST /file/rename`
-  - `PUT /file/move`
-  - `POST /folder/create`
-  - `POST /share/create`
-  - `POST /resource/save`
-  - `POST /token/refresh`
-  - `POST /user/repository`
-- 管理员接口（Auth + Admin）
-  - `GET /admin/overview`
-  - `GET /admin/users`
-  - `PUT /admin/user/status`
-  - `GET /admin/files`
-  - `DELETE /admin/file`
-  - `GET /admin/logs`
-
-## 数据库表
-
-建表脚本: `databases.sql`
-
-- `user_basic`: 用户账户信息
-- `repository_pool`: 文件公共池（按哈希去重）
-- `user_repository`: 用户文件树
-- `share_link`: 分享记录
-- `audit_log`: 操作审计日志
-
-## 开发规范
-
-### 后端分层
-
-- `handler`: 参数解析和响应输出
-- `logic`: 业务逻辑
-- `models`: 数据访问模型
-- `types`: 请求/响应结构
-
-### API 变更流程
-
-1. 先修改 `gopan/gopan.api`
-2. 再同步 `gopan/internal/types`、`gopan/internal/logic`
-3. 最后同步 `web/src/api`、`web/src/types` 与页面调用
-4. 更新 README 的接口或行为说明
-
-### 提交前检查
-
-```bash
-go fmt ./...
-go build ./...
-cd web
-npm run build
-```
-
-### Git 规范（建议）
-
-- 分支: `feature/*`, `fix/*`, `refactor/*`
-- 提交信息: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
-
-## 安全规范
-
-- 不要把真实密钥、邮箱授权码提交到仓库
-- 敏感信息统一走环境变量或本地私有配置
-- 建议按环境维护配置文件（dev/test/prod）
-
-## Docker 云端部署（Linux）
-
-项目已提供 Docker 化部署文件，可直接在云服务器上通过 `docker compose` 一键启动：
-
-- `docker-compose.yml`
-- `gopan/Dockerfile`（后端镜像）
-- `gopan/etc/gopan-api.docker.yaml`（后端容器配置模板）
-- `web/Dockerfile`（前端镜像）
-- `web/nginx/default.conf`（前端 Nginx + API 反向代理）
-- `.env.example`（环境变量示例）
-
-### 1. 服务器准备
-
-建议环境：
-
-- Linux x86_64
-- Docker >= 24
-- Docker Compose Plugin >= 2.20
-
-Ubuntu 示例安装：
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-```
-
-### 2. 拉取代码并配置环境
-
-```bash
-git clone <your-repo-url> GoPan
-cd GoPan
 cp .env.example .env
-```
-
-编辑 `.env`，至少修改以下关键配置：
-
-- `MYSQL_ROOT_PASSWORD`
-- `GOPAN_JWT_KEY`
-- `GOPAN_FROM_MAIL` / `GOPAN_MAIL_PASSWORD`
-- `GOPAN_TENCENT_SECRET_ID` / `GOPAN_TENCENT_SECRET_KEY` / `GOPAN_COS_BUCKET_URL`
-
-### 3. 启动服务
-
-```bash
 docker compose up -d --build
 ```
 
-服务说明：
+这会启动：
 
-- `mysql`：自动执行 `databases.sql` 初始化表结构
-- `redis`：缓存
-- `backend`：Go API，容器内监听 `8888`
-- `frontend`：Nginx 托管前端并反代 `/api/* -> backend:8888/*`
+- MySQL
+- Redis
+- 后端 API
+- 前端静态站点
 
-### 4. 验证部署
+前端通过 Nginx 提供，`/api/` 会转发到后端服务。
 
-```bash
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-```
+### 方式二：部署脚本
 
-浏览器访问：
-
-- `http://<服务器公网IP>/`
-
-API 健康检查示例：
+Linux 环境下可以直接运行：
 
 ```bash
-curl -i http://127.0.0.1:8888/user/detail
+bash deploy-docker.sh
 ```
 
-### 5. 常用运维命令
+脚本提供交互式菜单，支持：
 
-重启：
+- 全量部署
+- 仅重建前端
+- 仅重建后端
+- 启动、停止、重启
+- 查看状态和日志
+- Git 更新后重新部署
+- 创建默认管理员
+- 清理悬空镜像
 
-```bash
-docker compose restart
-```
+### 首次部署注意事项
 
-更新发布：
+- 首次部署前务必检查 `.env`，尤其是密码、JWT 密钥、SMTP 和 COS 配置
+- `databases.sql` 会在 MySQL 首次启动时自动初始化
+- 部署脚本支持创建默认管理员，账号为 `admin`，邮箱为 `admin@linux.com`，初始密码为 `123456`
+- 登录后请立即修改默认管理员密码
 
-```bash
-git pull
-docker compose up -d --build
-```
+## 接口概览
 
-停止并保留数据：
+接口定义来自 `gopan/gopan.api`，运行时路由由 `gopan/internal/handler/routes.go` 注册。
 
-```bash
-docker compose down
-```
+### 公开接口
 
-彻底清理（会删除 MySQL/Redis 数据卷）：
+- `POST /code/send`
+- `POST /register`
+- `GET /resource/info`
+- `GET /user/detail`
+- `POST /user/login`
 
-```bash
-docker compose down -v
-```
+### 登录后接口
 
-## 常见问题
+- `POST /file/upload`
+- `POST /file/preupload`
+- `POST /file/chunkupload`
+- `POST /file/chunkupload/complete`
+- `GET /file/list`
+- `DELETE /file/delete`
+- `POST /file/rename`
+- `PUT /file/move`
+- `POST /folder/create`
+- `POST /share/create`
+- `POST /resource/save`
+- `POST /token/refresh`
+- `POST /user/repository`
 
-### 后端启动失败
+### 管理员接口
 
-- 检查 MySQL/Redis 是否可用
-- 检查 `gopan/etc/gopan-api.local.yaml` 中连接串
-- 先执行 `go build ./...` 验证编译是否通过
+以下接口需要管理员权限：
 
-### 前端请求 404/跨域
+- `GET /admin/overview`
+- `GET /admin/users`
+- `PUT /admin/user/status`
+- `GET /admin/files`
+- `DELETE /admin/file`
+- `GET /admin/logs`
 
-- 确认后端已启动在 `127.0.0.1:8888`
-- 检查 `web/vite.config.ts` 代理配置
-- 前端请求路径应以 `/api` 开头
+## 前端接口分层
 
-### COS 或邮件功能异常
+前端 API 已按功能模块拆分，方便维护：
 
-- 检查 `GOPAN_*` 环境变量是否注入
-- 检查 COS 桶权限、SMTP 服务和授权码是否有效
+- `web/src/api/modules/auth.ts`：登录、注册、验证码、用户详情
+- `web/src/api/modules/disk.ts`：文件列表、上传、下载、移动、重命名、删除、分享、分片上传
+- 其他模块用于后台管理和分享页面逻辑
+
+Axios 统一封装在 `web/src/api/http.ts` 中，包含：
+
+- 自动注入 `Authorization`
+- 401 时自动刷新 token
+- 刷新失败后清理本地登录态
+
+## 常见工作流
+
+### 文件上传
+
+标准上传和分片上传都支持。前端会先进行预上传判断，利用文件哈希决定是否需要真正传输文件内容。
+
+### 分片上传
+
+大文件会先调用预上传接口，再分片上传到 COS，最后调用分片完成接口提交合并信息。
+
+### 分享文件
+
+分享通过 `share_link` 记录管理，支持设置失效时间，部分逻辑还支持访问密码。
+
+### 后台管理
+
+后台主要做三类事情：
+
+- 查看系统概览
+- 管理用户状态和权限
+- 查看文件和审计日志
+
+## 开发建议
+
+- 修改接口或配置后，先执行后端编译和前端构建，确保基础链路正常
+- 前端登录态保存在浏览器本地存储中，`token` 过期后会自动尝试刷新
+- 若启用邮箱验证码或 COS 上传，请先确认对应环境变量已正确配置
+- 如果用户已经登录但接口持续返回 `401`，先检查 `user_basic.status`，因为认证中间件会拒绝禁用用户

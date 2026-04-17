@@ -216,7 +216,7 @@ a:hover {
 }
 
 .table-scroll-content > .table {
-  width: var(--scroll-min-width, 100%);
+  width: 100%;
   min-width: var(--scroll-min-width, 100%);
 }
 

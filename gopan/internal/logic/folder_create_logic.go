@@ -6,8 +6,6 @@ package logic
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
 	"gopan/gopan/helper"
 	"gopan/gopan/internal/svc"
@@ -37,34 +35,16 @@ func (l *FolderCreateLogic) FolderCreate(req *types.FolderCreateRequest, userIde
 		return nil, errors.New("文件夹名称不合法")
 	}
 
-	existing := new(models.UserRepository)
-	has, err := l.svcCtx.Engine.Table("user_repository").Unscoped().
-		Where("user_identity = ? AND parent_id = ? AND name = ?", userIdentity, req.ParentId, req.Name).
-		Desc("id").Get(existing)
+	availableName, err := buildAvailableName(l.svcCtx.Engine, userIdentity, req.ParentId, req.Name)
 	if err != nil {
 		return nil, err
-	}
-
-	if has {
-		if existing.DeletedAt.IsZero() {
-			return nil, errors.New("文件夹名已存在")
-		}
-
-		recycledName := fmt.Sprintf("%s__deleted_%d_%d", req.Name, existing.Id, time.Now().Unix())
-		_, err = l.svcCtx.Engine.Exec(
-			"UPDATE user_repository SET name = ?, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL",
-			recycledName, time.Now(), existing.Id,
-		)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	data := &models.UserRepository{
 		Identity:     helper.GenerateUUID(),
 		UserIdentity: userIdentity,
 		ParentId:     req.ParentId,
-		Name:         req.Name,
+		Name:         availableName,
 	}
 	_, err = l.svcCtx.Engine.Insert(data)
 	if err != nil {

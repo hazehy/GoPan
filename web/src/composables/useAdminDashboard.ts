@@ -24,7 +24,7 @@ import {
   type LogSubPage,
 } from '@/utils/adminLog';
 import { resetPageAndLoad } from '@/composables/usePaging';
-import { confirmDialog } from '@/composables/useDialog';
+import { alertDialog, confirmDialog } from '@/composables/useDialog';
 
 export function useAdminDashboard() {
   const router = useRouter();
@@ -68,7 +68,6 @@ export function useAdminDashboard() {
   const logSaverName = ref('');
   const logDay = ref('');
   const logSubPage = ref<LogSubPage>('login');
-  const errorMessage = ref('');
 
   const logActionOptions = [
     'USER_REGISTER',
@@ -238,10 +237,9 @@ export function useAdminDashboard() {
 
   async function bootstrap() {
     try {
-      errorMessage.value = '';
       await Promise.all([loadOverview(), loadUsers(), loadFiles(), loadLogs()]);
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '加载失败');
     }
   }
 
@@ -257,7 +255,7 @@ export function useAdminDashboard() {
       });
       await Promise.all([loadUsers(), loadOverview()]);
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '更新失败');
     } finally {
       userStatusLoading.value = false;
     }
@@ -279,7 +277,7 @@ export function useAdminDashboard() {
       });
       await loadUsers();
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '更新失败');
     } finally {
       userStatusLoading.value = false;
     }
@@ -298,7 +296,7 @@ export function useAdminDashboard() {
       await adminFileDeleteApi(identity);
       await Promise.all([loadFiles(), loadOverview()]);
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '删除失败');
     } finally {
       fileDeleteLoading.value = false;
     }
@@ -362,7 +360,6 @@ export function useAdminDashboard() {
     logSaverName,
     logDay,
     logSubPage,
-    errorMessage,
     logActionOptions,
     logSubPageOptions,
     stats,

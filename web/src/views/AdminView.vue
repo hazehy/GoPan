@@ -123,8 +123,6 @@
           @update:logSaverName="logSaverName = $event"
           @update:logDay="logDay = $event"
         />
-
-        <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
       </section>
     </div>
   </div>
@@ -165,7 +163,6 @@ const {
   logSaverName,
   logDay,
   logSubPage,
-  errorMessage,
   logActionOptions,
   logSubPageOptions,
   stats,

@@ -55,7 +55,6 @@
         <button class="btn btn-primary" type="submit" :disabled="loading">
           {{ loading ? "提交中..." : "重置密码" }}
         </button>
-        <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
       </form>
 
       <div class="login-footer">
@@ -73,6 +72,7 @@
 import { onBeforeUnmount, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { resetPasswordApi, sendResetCodeApi } from "@/api/modules/auth";
+import { alertDialog } from "@/composables/useDialog";
 import { validateCode, validateEmail, validatePassword } from "@/utils/validators";
 
 const router = useRouter();
@@ -87,7 +87,6 @@ const form = reactive({
 const loading = ref(false);
 const sendingCode = ref(false);
 const codeCooldown = ref(0);
-const errorMessage = ref("");
 const lastSubmitAt = ref(0);
 const lastSendCodeAt = ref(0);
 const SUBMIT_GUARD_MS = 1200;
@@ -95,8 +94,8 @@ const SEND_CODE_GUARD_MS = 1000;
 
 let timer: number | null = null;
 
-function showValidationError(message: string) {
-  errorMessage.value = message;
+async function showValidationError(message: string) {
+  await alertDialog(message, "提示");
 }
 
 function startCooldown() {
@@ -117,24 +116,23 @@ async function sendCode() {
 
   const emailError = validateEmail(form.email);
   if (emailError) {
-    showValidationError(emailError);
+    await showValidationError(emailError);
     return;
   }
 
   const now = Date.now();
   if (now - lastSendCodeAt.value < SEND_CODE_GUARD_MS) {
-    showValidationError("操作过于频繁，请稍后再试");
+    await showValidationError("操作过于频繁，请稍后再试");
     return;
   }
 
   try {
     lastSendCodeAt.value = now;
     sendingCode.value = true;
-    errorMessage.value = "";
     await sendResetCodeApi({ email: form.email });
     startCooldown();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "发送失败");
   } finally {
     sendingCode.value = false;
   }
@@ -147,34 +145,33 @@ async function onSubmit() {
 
   const now = Date.now();
   if (now - lastSubmitAt.value < SUBMIT_GUARD_MS) {
-    showValidationError("操作过于频繁，请稍后再试");
+    await showValidationError("操作过于频繁，请稍后再试");
     return;
   }
 
   const emailError = validateEmail(form.email);
   if (emailError) {
-    showValidationError(emailError);
+    await showValidationError(emailError);
     return;
   }
   const codeError = validateCode(form.code);
   if (codeError) {
-    showValidationError(codeError);
+    await showValidationError(codeError);
     return;
   }
   const passwordError = validatePassword(form.password);
   if (passwordError) {
-    showValidationError(passwordError);
+    await showValidationError(passwordError);
     return;
   }
   if (form.password !== form.confirmPassword) {
-    showValidationError("两次输入的密码不一致");
+    await showValidationError("两次输入的密码不一致");
     return;
   }
 
   try {
     lastSubmitAt.value = now;
     loading.value = true;
-    errorMessage.value = "";
     await resetPasswordApi({
       email: form.email,
       code: form.code,
@@ -182,7 +179,7 @@ async function onSubmit() {
     });
     await router.replace("/login");
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "重置失败");
   } finally {
     loading.value = false;
   }

@@ -25,7 +25,6 @@
         <button class="btn btn-primary" type="submit" :disabled="loading">
           {{ loading ? "登录中..." : "登录" }}
         </button>
-        <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
       </form>
 
       <div class="login-footer">
@@ -46,6 +45,7 @@
 import { reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { loginApi } from "@/api/modules/auth";
+import { alertDialog } from "@/composables/useDialog";
 import { useAuthStore } from "@/stores/auth";
 import { validatePassword, validateUsername } from "@/utils/validators";
 
@@ -58,7 +58,6 @@ const form = reactive({
   password: "",
 });
 const loading = ref(false);
-const errorMessage = ref("");
 const lastSubmitAt = ref(0);
 const SUBMIT_GUARD_MS = 1200;
 
@@ -68,25 +67,24 @@ async function onSubmit() {
   }
   const now = Date.now();
   if (now - lastSubmitAt.value < SUBMIT_GUARD_MS) {
-    errorMessage.value = "操作过于频繁，请稍后再试";
+    await alertDialog("操作过于频繁，请稍后再试", "提示");
     return;
   }
 
   const usernameError = validateUsername(form.name);
   if (usernameError) {
-    errorMessage.value = usernameError;
+    await alertDialog(usernameError, "提示");
     return;
   }
   const passwordError = validatePassword(form.password);
   if (passwordError) {
-    errorMessage.value = passwordError;
+    await alertDialog(passwordError, "提示");
     return;
   }
 
   try {
     lastSubmitAt.value = now;
     loading.value = true;
-    errorMessage.value = "";
     const res = await loginApi(form);
     authStore.setTokens(res.token, res.refresh_token, res.role);
 
@@ -98,7 +96,7 @@ async function onSubmit() {
           : "/disk";
     await router.replace(redirect);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "登录失败");
   } finally {
     loading.value = false;
   }

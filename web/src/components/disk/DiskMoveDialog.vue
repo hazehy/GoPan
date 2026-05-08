@@ -44,7 +44,6 @@
       <p class="muted" style="margin: 8px 0 0">
         目标目录：{{ props.currentMovePath }}
       </p>
-      <p class="error" v-if="props.moveErrorMessage">{{ props.moveErrorMessage }}</p>
 
       <div class="dialog-actions" style="margin-top: 12px">
         <button
@@ -76,7 +75,6 @@ interface Props {
   moveBreadcrumbs: Array<{ id: number; identity: string; name: string }>;
   moveFolderOptions: UserFile[];
   currentMovePath: string;
-  moveErrorMessage: string;
   moveLoading: boolean;
   canConfirmMove: boolean;
   closeMoveDialog: () => void;

@@ -175,8 +175,6 @@
       </button>
       <span class="muted">第 {{ props.page }} 页 / 共 {{ props.total }} 条</span>
     </div>
-
-    <p class="error" v-if="props.errorMessage">{{ props.errorMessage }}</p>
   </div>
 </template>
 
@@ -196,7 +194,6 @@ interface Props {
   page: number;
   size: number;
   total: number;
-  errorMessage: string;
   pagedDisplayFiles: UserFile[];
   goParent: () => void;
   createFolder: () => void;

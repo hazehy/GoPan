@@ -49,7 +49,6 @@
           :page="page"
           :size="size"
           :total="total"
-          :error-message="errorMessage"
           :paged-display-files="pagedDisplayFiles"
           :go-parent="goParent"
           :create-folder="createFolder"
@@ -80,7 +79,6 @@
       :move-breadcrumbs="moveBreadcrumbs"
       :move-folder-options="moveFolderOptions"
       :current-move-path="currentMovePath"
-      :move-error-message="moveErrorMessage"
       :move-loading="moveLoading"
       :can-confirm-move="canConfirmMove"
       :close-move-dialog="closeMoveDialog"
@@ -107,7 +105,6 @@ const {
   size,
   currentParentId,
   breadcrumbs,
-  errorMessage,
   keyword,
   typeFilter,
   sortBy,
@@ -118,7 +115,6 @@ const {
   moveBreadcrumbs,
   moveFolderOptions,
   moveLoading,
-  moveErrorMessage,
   currentTitle,
   total,
   pagedDisplayFiles,

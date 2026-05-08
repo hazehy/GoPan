@@ -69,8 +69,6 @@
           >
         </div>
       </div>
-
-      <p class="error" v-if="errorMessage">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
@@ -92,7 +90,6 @@ const authStore = useAuthStore();
 const resource = ref<ResourceInfoResponse | null>(null);
 const saving = ref(false);
 const loadingFolders = ref(false);
-const errorMessage = ref("");
 const saveParentId = ref(0);
 const folderBreadcrumbs = ref<Array<{ id: number; name: string }>>([]);
 const folderOptions = ref<UserFile[]>([]);
@@ -129,7 +126,7 @@ async function loadFolders() {
       isFolder(item),
     );
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "加载失败");
   } finally {
     loadingFolders.value = false;
   }
@@ -167,16 +164,15 @@ async function enterFolder(folder: UserFile) {
 async function loadResource() {
   const shareIdentity = getShareIdentity();
   if (!shareIdentity) {
-    errorMessage.value = "分享链接无效：缺少 identity";
+    await alertDialog("分享链接无效：缺少 identity", "提示");
     resource.value = null;
     return;
   }
 
   try {
-    errorMessage.value = "";
     resource.value = await resourceInfoApi(shareIdentity);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "加载失败");
   }
 }
 
@@ -200,7 +196,7 @@ async function saveToDisk() {
     });
     await alertDialog(`已保存到 ${currentSavePath.value}`, "保存成功");
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "保存失败");
   } finally {
     saving.value = false;
   }

@@ -80,7 +80,6 @@ export function useDiskBrowser() {
   const size = ref(10);
   const currentParentId = ref(0);
   const breadcrumbs = ref<Array<{ id: number; name: string }>>([]);
-  const errorMessage = ref('');
   const keyword = ref('');
   const typeFilter = ref<'all' | 'folder' | 'file'>('all');
   const sortBy = ref<'updated' | 'name' | 'size'>('updated');
@@ -94,7 +93,6 @@ export function useDiskBrowser() {
   >([]);
   const moveFolderOptions = ref<UserFile[]>([]);
   const moveLoading = ref(false);
-  const moveErrorMessage = ref('');
 
   const currentTitle = computed(() =>
     activeTab.value === 'files' ? '我的文件' : '文件上传',
@@ -189,10 +187,9 @@ export function useDiskBrowser() {
 
   async function refreshList() {
     try {
-      errorMessage.value = '';
       await fetchList();
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '加载失败');
     }
   }
 
@@ -233,7 +230,7 @@ export function useDiskBrowser() {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '下载失败');
     }
   }
 
@@ -275,7 +272,7 @@ export function useDiskBrowser() {
       await folderCreateApi({ name, parent_id: currentParentId.value });
       await refreshList();
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '创建失败');
     }
   }
 
@@ -294,7 +291,7 @@ export function useDiskBrowser() {
       await fileRenameApi({ identity: item.identity, name });
       await refreshList();
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '重命名失败');
     }
   }
 
@@ -310,7 +307,7 @@ export function useDiskBrowser() {
       await fileDeleteApi(item.identity);
       await refreshList();
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '删除失败');
     }
   }
 
@@ -319,7 +316,6 @@ export function useDiskBrowser() {
     movingItem.value = item;
     moveParentId.value = 0;
     moveBreadcrumbs.value = [];
-    moveErrorMessage.value = '';
     await loadMoveFolderOptions();
   }
 
@@ -333,10 +329,9 @@ export function useDiskBrowser() {
   async function loadMoveFolderOptions() {
     try {
       moveLoading.value = true;
-      moveErrorMessage.value = '';
       moveFolderOptions.value = await fetchFolderListByParentId(moveParentId.value);
     } catch (error) {
-      moveErrorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '加载失败');
     } finally {
       moveLoading.value = false;
     }
@@ -348,7 +343,6 @@ export function useDiskBrowser() {
     moveParentId.value = 0;
     moveBreadcrumbs.value = [];
     moveFolderOptions.value = [];
-    moveErrorMessage.value = '';
   }
 
   function closeMoveDialog() {
@@ -369,7 +363,7 @@ export function useDiskBrowser() {
 
   async function enterMoveFolder(folder: UserFile) {
     if (isMoveFolderSelf(folder)) {
-      moveErrorMessage.value = '不能移动到自身目录';
+      await alertDialog('不能移动到自身目录', '提示');
       return;
     }
     moveBreadcrumbs.value.push({
@@ -387,13 +381,12 @@ export function useDiskBrowser() {
     }
     const targetIdentity = selectedMoveTargetIdentity.value;
     if (!targetIdentity) {
-      moveErrorMessage.value = '请选择目标文件夹';
+      await alertDialog('请选择目标文件夹', '提示');
       return;
     }
 
     try {
       moveLoading.value = true;
-      moveErrorMessage.value = '';
       await fileMoveApi({
         identity: movingItem.value.identity,
         parent_identity: targetIdentity,
@@ -402,7 +395,7 @@ export function useDiskBrowser() {
       await alertDialog('移动成功', '提示');
       await refreshList();
     } catch (error) {
-      moveErrorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '移动失败');
     } finally {
       moveLoading.value = false;
     }
@@ -410,7 +403,7 @@ export function useDiskBrowser() {
 
   async function createShare(item: UserFile) {
     if (!item.repository_identity) {
-      errorMessage.value = '该资源不支持分享';
+      await alertDialog('该资源不支持分享', '提示');
       return;
     }
 
@@ -448,7 +441,7 @@ export function useDiskBrowser() {
         );
       }
     } catch (error) {
-      errorMessage.value = toErrorMessage(error);
+      await alertDialog(toErrorMessage(error), '创建分享失败');
     }
   }
 
@@ -477,7 +470,6 @@ export function useDiskBrowser() {
     size,
     currentParentId,
     breadcrumbs,
-    errorMessage,
     keyword,
     typeFilter,
     sortBy,
@@ -488,7 +480,6 @@ export function useDiskBrowser() {
     moveBreadcrumbs,
     moveFolderOptions,
     moveLoading,
-    moveErrorMessage,
     currentTitle,
     total,
     pagedDisplayFiles,

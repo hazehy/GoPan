@@ -83,10 +83,6 @@
             </div>
           </div>
 
-          <p class="error uploader-task-error" v-if="task.errorMessage">
-            {{ task.errorMessage }}
-          </p>
-
           <div class="uploader-task-actions">
             <button
               class="btn btn-secondary"
@@ -175,7 +171,6 @@
         <p class="uploader-destination-hint">
           将上传到：{{ currentLocationPath }}
         </p>
-        <p class="error" v-if="locationErrorMessage">{{ locationErrorMessage }}</p>
 
         <div class="dialog-actions" style="margin-top: 12px">
           <button class="btn btn-secondary" type="button" @click="closeLocationDialog">
@@ -199,6 +194,7 @@
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { fileListApi } from "@/api/modules/disk";
+import { alertDialog } from "@/composables/useDialog";
 import type { UserFile } from "@/types/api";
 import {
   type UploadTaskStatus,
@@ -220,7 +216,6 @@ const bindFileInputRef = ref<HTMLInputElement | null>(null);
 const bindingTaskId = ref("");
 const locationDialogVisible = ref(false);
 const locationLoading = ref(false);
-const locationErrorMessage = ref("");
 const locationParentId = ref(0);
 const selectedUploadParentId = ref(0);
 const locationBreadcrumbs = ref<Array<{ id: number; identity: string; name: string }>>(
@@ -258,7 +253,6 @@ function chooseFile() {
     name: node.name,
     identity: `${node.id}-${index}`,
   }));
-  locationErrorMessage.value = "";
   locationDialogVisible.value = true;
   void loadLocationFolderOptions();
 }
@@ -358,13 +352,11 @@ async function fetchFolderListByParentId(parentId: number) {
 async function loadLocationFolderOptions() {
   try {
     locationLoading.value = true;
-    locationErrorMessage.value = "";
     locationFolderOptions.value = await fetchFolderListByParentId(
       locationParentId.value,
     );
   } catch (error) {
-    locationErrorMessage.value =
-      error instanceof Error ? error.message : String(error);
+    await alertDialog(error instanceof Error ? error.message : String(error), "加载失败");
   } finally {
     locationLoading.value = false;
   }
@@ -373,7 +365,6 @@ async function loadLocationFolderOptions() {
 function closeLocationDialog() {
   locationDialogVisible.value = false;
   locationFolderOptions.value = [];
-  locationErrorMessage.value = "";
 }
 
 async function goLocationRoot() {
@@ -421,12 +412,34 @@ const currentBrowsePath = computed(() => {
 });
 
 const hasBrowsePath = computed(() => props.browsePath.length > 0);
+const alertedTaskErrorKeys = new Set<string>();
 
 watch(successVersion, (next, prev) => {
   if (next > prev) {
     emit("success");
   }
 });
+
+watch(
+  sortedTasks,
+  async (tasks) => {
+    for (const task of tasks) {
+      if (!task.errorMessage) {
+        continue;
+      }
+      const key = `${task.id}:${task.errorMessage}`;
+      if (alertedTaskErrorKeys.has(key)) {
+        continue;
+      }
+      alertedTaskErrorKeys.add(key);
+      await alertDialog(
+        `${task.name}${task.ext ?? ""}：${task.errorMessage}`,
+        "上传失败",
+      );
+    }
+  },
+  { deep: true },
+);
 
 function onFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;

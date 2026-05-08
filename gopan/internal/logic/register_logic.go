@@ -7,6 +7,9 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
+
+	"gopan/gopan/define"
 
 	"gopan/gopan/helper"
 	"gopan/gopan/internal/svc"
@@ -33,7 +36,7 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 func (l *RegisterLogic) Register(req *types.RegisterRequest) (resp *types.RegisterResponse, err error) {
 	req.Name = helper.NormalizeInput(req.Name)
 	req.Email = helper.NormalizeInput(req.Email)
-	req.Code = helper.NormalizeInput(req.Code)
+	req.Code = strings.ToLower(helper.NormalizeInput(req.Code))
 
 	if !helper.IsValidUsername(req.Name) {
 		return nil, errors.New("用户名格式不正确")
@@ -44,9 +47,13 @@ func (l *RegisterLogic) Register(req *types.RegisterRequest) (resp *types.Regist
 	if !helper.IsValidPassword(req.Password) {
 		return nil, errors.New("密码长度需在6到32位")
 	}
+	if !helper.IsValidVerificationCode(req.Code, define.CodeLength) {
+		return nil, errors.New("验证码格式不正确")
+	}
 
 	// 对比验证码
-	code, err := l.svcCtx.RDB.Get(l.ctx, req.Email).Result()
+	registerCodeKey := helper.BuildCodeRedisKey(define.RegisterCodeRedisPrefix, req.Email)
+	code, err := l.svcCtx.RDB.Get(l.ctx, registerCodeKey).Result()
 	if err != nil {
 		return nil, errors.New("验证码已失效")
 	}

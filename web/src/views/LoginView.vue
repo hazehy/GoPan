@@ -32,6 +32,9 @@
         <p class="muted">
           没有账号？<router-link to="/register">去注册</router-link>
         </p>
+        <p class="muted mt-12">
+          忘记密码？<router-link to="/forgot-password">找回密码</router-link>
+        </p>
       </div>
 
       <div class="login-decoration" aria-hidden="true"></div>

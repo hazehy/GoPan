@@ -124,6 +124,22 @@ type LoginResponse struct {
 	SharePermission    int    `json:"share_permission"`
 }
 
+type PasswordResetCodeSendRequest struct {
+	Email string `json:"email"`
+}
+
+type PasswordResetCodeSendResponse struct {
+}
+
+type PasswordResetRequest struct {
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
+}
+
+type PasswordResetResponse struct {
+}
+
 type RegisterRequest struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`

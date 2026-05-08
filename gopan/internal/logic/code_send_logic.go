@@ -49,7 +49,8 @@ func (l *CodeSendLogic) CodeSend(req *types.CodeSendRequest) (resp *types.CodeSe
 	// 生成验证码
 	code := helper.RandomCode()
 	// Redis存储验证码
-	l.svcCtx.RDB.Set(l.ctx, req.Email, code, time.Second*time.Duration(define.CodeExpire))
+	registerCodeKey := helper.BuildCodeRedisKey(define.RegisterCodeRedisPrefix, req.Email)
+	l.svcCtx.RDB.Set(l.ctx, registerCodeKey, code, time.Second*time.Duration(define.CodeExpire))
 	// 发送验证码
 	err = helper.MailCodeSend(req.Email, code)
 	if err != nil {

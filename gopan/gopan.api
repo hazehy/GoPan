@@ -13,6 +13,14 @@ service gopan-api {
 	@handler CodeSend
 	post /code/send (CodeSendRequest) returns (CodeSendResponse)
 
+	// 找回密码验证码发送
+	@handler PasswordResetCodeSend
+	post /password/reset/code/send (PasswordResetCodeSendRequest) returns (PasswordResetCodeSendResponse)
+
+	// 找回密码
+	@handler PasswordReset
+	post /password/reset (PasswordResetRequest) returns (PasswordResetResponse)
+
 	// 用户注册
 	@handler Register
 	post /register (RegisterRequest) returns (RegisterResponse)
@@ -103,6 +111,20 @@ type CodeSendRequest {
 }
 
 type CodeSendResponse {}
+
+type PasswordResetCodeSendRequest {
+	Email string `json:"email"`
+}
+
+type PasswordResetCodeSendResponse {}
+
+type PasswordResetRequest {
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
+}
+
+type PasswordResetResponse {}
 
 type RegisterRequest {
 	Name     string `json:"name"`

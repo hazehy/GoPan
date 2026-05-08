@@ -19,6 +19,11 @@ const router = createRouter({
       component: () => import('@/views/RegisterView.vue'),
     },
     {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('@/views/ForgotPasswordView.vue'),
+    },
+    {
       path: '/disk',
       name: 'disk',
       component: () => import('@/views/DiskView.vue'),
@@ -63,7 +68,7 @@ router.beforeEach((to) => {
     return '/admin';
   }
 
-  if ((to.path === '/login' || to.path === '/register') && authStore.isLoggedIn) {
+  if ((to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') && authStore.isLoggedIn) {
     return authStore.isAdmin ? '/admin' : '/disk';
   }
 

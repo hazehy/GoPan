@@ -42,6 +42,9 @@ export function validateCode(code: string) {
   if (!value) {
     return '验证码不能为空';
   }
+  if (!/^[a-zA-Z0-9]{6}$/.test(value)) {
+    return '验证码需为 6 位字母或数字';
+  }
   return '';
 }
 

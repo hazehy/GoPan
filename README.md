@@ -189,12 +189,7 @@ go run ./gopan/gopan.go -f gopan/etc/gopan-api.local.yaml
 
 ### 3. 启动前端
 
-在 `web/` 目录下执行：
-
-```bash
-npm install
-npm run dev
-```
+在 `web/` 目录下执行：m install
 
 Vite 开发服务器默认运行在 `5173`，并且已经把 `/api` 代理到 `http://127.0.0.1:8888`。
 

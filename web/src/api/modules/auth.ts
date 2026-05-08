@@ -13,6 +13,14 @@ export function sendCodeApi(payload: { email: string }) {
   return http.post('/code/send', payload, { skipAuth: true });
 }
 
+export function sendResetCodeApi(payload: { email: string }) {
+  return http.post('/password/reset/code/send', payload, { skipAuth: true });
+}
+
+export function resetPasswordApi(payload: { email: string; code: string; password: string }) {
+  return http.post('/password/reset', payload, { skipAuth: true });
+}
+
 export function userDetailApi(identity: string) {
   return http.get<never, UserDetailResponse>('/user/detail', {
     params: { identity },

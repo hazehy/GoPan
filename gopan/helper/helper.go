@@ -28,6 +28,7 @@ import (
 var (
 	usernameRegexp = regexp.MustCompile(`^[\p{Han}a-zA-Z0-9_]+$`)
 	emailRegexp    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	codeRegexp     = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 )
 
 func NormalizeInput(value string) string {
@@ -49,6 +50,18 @@ func IsValidPassword(password string) bool {
 func IsValidEmail(email string) bool {
 	email = NormalizeInput(email)
 	return emailRegexp.MatchString(email)
+}
+
+func IsValidVerificationCode(code string, length int) bool {
+	code = NormalizeInput(code)
+	if len(code) != length {
+		return false
+	}
+	return codeRegexp.MatchString(code)
+}
+
+func BuildCodeRedisKey(prefix, email string) string {
+	return strings.TrimSpace(prefix) + strings.ToLower(NormalizeInput(email))
 }
 
 func IsValidFileOrFolderName(name string) bool {
